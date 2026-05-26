@@ -1,0 +1,27 @@
+# Loterias Analyzer — Streamlit + API FastAPI
+# Uso: docker compose up --build
+# Dados (XLSX/CSV em app/data) persistem no volume nomeado.
+
+services:
+  streamlit:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - apostas-data:/app/app/data
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    volumes:
+      - apostas-data:/app/app/data
+    restart: unless-stopped
+
+volumes:
+  apostas-data:

@@ -1,0 +1,28 @@
+# Git e ambientes locais
+.git
+.gitignore
+.env
+.venv
+venv
+ENV
+env
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.egg-info
+.pytest_cache
+.coverage
+htmlcov
+
+# IDE
+.vscode
+.idea
+
+# Dados gerados (monte volume em runtime; evita copiar CSVs enormes do dev)
+app/data/*.csv
+app/data/*.xlsx
+
+# Docker
+docker-compose.override.yml

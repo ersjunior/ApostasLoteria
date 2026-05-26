@@ -1,0 +1,335 @@
+import os
+import pandas as pd
+import streamlit as st
+from pathlib import Path
+from openpyxl import load_workbook
+
+
+# =========================
+# NORMALIZAÇÃO
+# =========================
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df.columns = (
+        df.columns
+        .str.lower()
+        .str.strip()
+        .str.replace(" ", "")
+        .str.replace("_", "")
+    )
+    return df
+
+
+# =========================
+# ENRIQUECIMENTO
+# =========================
+def enrich_dataset(
+    df: pd.DataFrame,
+    total_bolas: int,
+    extra_fields: dict | None = None
+) -> pd.DataFrame:
+
+    dezenas = [f"bola{i}" for i in range(1, total_bolas + 1)]
+
+    if not all(col in df.columns for col in dezenas):
+        raise ValueError(
+            f"Colunas inválidas no XLSX.\n"
+            f"Esperado: {dezenas}\n"
+            f"Encontrado: {df.columns.tolist()}"
+        )
+
+    def parse_int(v):
+        if v is None:
+            return None
+        v = str(v).strip()
+        if not v.isdigit():
+            return None
+        return int(v)
+
+    df["jogo"] = df[dezenas].apply(
+        lambda row: sorted(
+            parse_int(v) for v in row.tolist()
+            if parse_int(v) is not None
+        ),
+        axis=1
+    )
+
+    df = df[df["jogo"].apply(lambda x: len(x) == total_bolas)]
+
+    # 🔹 CAMPOS EXTRAS
+    if extra_fields:
+        for field, qtd in extra_fields.items():
+
+            # Campo único (Timemania)
+            if qtd == 1 and field in df.columns:
+                df[field] = df[field].astype(str).str.strip()
+                continue
+
+            cols = [f"{field}{i}" for i in range(1, qtd + 1)]
+
+            if not all(col in df.columns for col in cols):
+                raise ValueError(
+                    f"Colunas extras inválidas para '{field}': {cols}"
+                )
+
+            df[field] = df[cols].apply(
+                lambda x: sorted(
+                    int(v) for v in x.tolist()
+                    if v is not None and str(v).isdigit()
+                ),
+                axis=1
+            )
+
+    # ✅ RETORNO GARANTIDO EM TODOS OS CASOS
+    return df
+
+
+# =========================
+# LOTOMANIA
+# =========================
+def handle_lotomania(file_path: str) -> pd.DataFrame:
+    try:
+        # 🔒 Força leitura como TEXTO, sem inferência de tipo
+        df_raw = pd.read_excel(
+            file_path,
+            engine="openpyxl",
+            dtype=str,
+            converters=lambda x: str
+        )
+    except Exception as e:
+        raise ValueError(
+            "O arquivo da Lotomania não é um XLSX válido.\n\n"
+            "➡️ Baixe novamente no site da Caixa\n"
+            "➡️ Não renomeie HTML para .xlsx\n\n"
+            f"Erro técnico: {str(e)}"
+        )
+
+    df_raw = normalize_columns(df_raw)
+
+    # 🔎 Detectar colunas bola*
+    dezenas_cols = [c for c in df_raw.columns if c.startswith("bola")]
+
+    if len(dezenas_cols) < 50:
+        raise ValueError(
+            f"Não foi possível identificar as 50 dezenas da Lotomania.\n"
+            f"Colunas encontradas: {dezenas_cols}"
+        )
+
+    jogos = []
+
+    for _, row in df_raw.iterrows():
+        dezenas = []
+
+        for col in dezenas_cols:
+            val = str(row[col]).strip()
+
+            # Ignorar lixo do XLSX da Caixa
+            if val in ("", "-", "nan", "None"):
+                continue
+
+            # Aceitar apenas números
+            if val.isdigit():
+                dezenas.append(int(val))
+
+        if len(dezenas) == 50:
+            jogos.append(sorted(dezenas))
+
+    if not jogos:
+        raise ValueError(
+            "Nenhum jogo válido encontrado na base da Lotomania.\n"
+            "O arquivo pode estar corrompido ou em formato inesperado."
+        )
+
+    return pd.DataFrame({"jogo": jogos})
+
+
+# =========================
+# SUPER SETE
+# =========================
+def handle_supersete(file_path: str) -> pd.DataFrame:
+    df_raw = pd.read_excel(file_path, dtype=str)
+    df_raw = normalize_columns(df_raw)
+
+    colunas = [f"coluna{i}" for i in range(1, 8)]
+
+    if not all(col in df_raw.columns for col in colunas):
+        raise ValueError(
+            f"Colunas inválidas do Super Sete. Esperado: {colunas}"
+        )
+
+    jogos = []
+
+    for _, row in df_raw.iterrows():
+        dezenas = []
+
+        for col in colunas:
+            val = str(row[col]).strip()
+
+            if val.isdigit():
+                dezenas.append(int(val))
+
+        if len(dezenas) == 7:
+            jogos.append(dezenas)
+
+    if not jogos:
+        raise ValueError("Nenhum jogo válido encontrado no Super Sete.")
+
+    return pd.DataFrame({"jogo": jogos})
+
+
+# =========================
+# +MILIONÁRIA
+# =========================
+def handle_mais_milionaria(file_path: str) -> pd.DataFrame:
+    df_raw = pd.read_excel(file_path, dtype=str)
+    df_raw = normalize_columns(df_raw)
+
+    dezenas_cols = [f"bola{i}" for i in range(1, 7)]
+    trevos_cols = ["trevo1", "trevo2"]
+
+    if not all(col in df_raw.columns for col in dezenas_cols):
+        raise ValueError(
+            f"Colunas de dezenas inválidas. Esperado: {dezenas_cols}"
+        )
+
+    if not all(col in df_raw.columns for col in trevos_cols):
+        raise ValueError(
+            f"Colunas de trevos inválidas. Esperado: {trevos_cols}"
+        )
+
+    jogos = []
+
+    for _, row in df_raw.iterrows():
+        dezenas = []
+        trevos = []
+
+        for col in dezenas_cols:
+            v = str(row[col]).strip()
+            if v.isdigit():
+                dezenas.append(int(v))
+
+        for col in trevos_cols:
+            v = str(row[col]).strip()
+            if v.isdigit():
+                trevos.append(int(v))
+
+        if len(dezenas) == 6 and len(trevos) == 2:
+            jogos.append({
+                "jogo": sorted(dezenas),
+                "trevos": sorted(trevos)
+            })
+
+    if not jogos:
+        raise ValueError("Nenhum jogo válido encontrado na +Milionária.")
+
+    return pd.DataFrame(jogos)
+
+
+# =========================
+# LOADER INTERNO
+# =========================
+def load_dataset_internal(
+    file_path: str,
+    total_bolas: int,
+    extra_fields: dict | None = None,
+    multiple_draws: bool = False,
+    special_handler: str | None = None
+) -> pd.DataFrame:
+
+    if not Path(file_path).exists():
+        raise FileNotFoundError(f"Dataset não encontrado: {file_path}")
+    
+    # =========================
+    # CASOS ESPECIAIS
+    # =========================
+    if special_handler == "lotomania":
+        return handle_lotomania(file_path)
+    
+    if special_handler == "supersete":
+        return handle_supersete(file_path)
+    
+    if special_handler == "mais_milionaria":
+        return handle_mais_milionaria(file_path)
+
+    # ⛔ A PARTIR DAQUI LOTOMANIA NÃO PASSA
+    df_raw = pd.read_excel(file_path, dtype=str)
+    df_raw = normalize_columns(df_raw)
+
+    # =========================
+    # LEITURA PADRÃO (SEGURA)
+    # =========================
+    df_raw = pd.read_excel(file_path, dtype=str)
+    df_raw = normalize_columns(df_raw)
+
+    # =========================
+    # CASO ESPECIAL: DUPLA SENA
+    # =========================
+    if multiple_draws:
+        all_rows = []
+
+        for draw in [1, 2]:
+            dezenas_cols = [
+                f"bola{i}sorteio{draw}"
+                for i in range(1, total_bolas + 1)
+            ]
+
+            if not all(col in df_raw.columns for col in dezenas_cols):
+                raise ValueError(
+                    f"Colunas do sorteio {draw} não encontradas: {dezenas_cols}"
+                )
+
+            temp = df_raw[dezenas_cols].copy()
+            temp.columns = [f"bola{i}" for i in range(1, total_bolas + 1)]
+
+            temp["jogo"] = temp.apply(
+                lambda x: sorted(
+                    int(v) for v in x.tolist()
+                    if v is not None and v != "-" and v != ""
+                ),
+                axis=1
+            )
+
+            all_rows.append(temp[["jogo"]])
+
+        return pd.concat(all_rows, ignore_index=True)
+
+    # =========================
+    # RETORNO FINAL DO DF
+    # =========================
+    return enrich_dataset(df_raw, total_bolas, extra_fields)
+
+
+# =========================
+# LOADER CACHEADO
+# =========================
+@st.cache_data(ttl=3600)
+def load_dataset(
+    file_path: str,
+    total_bolas: int,
+    extra_fields: dict | None = None,
+    multiple_draws: bool = False,
+    special_handler: str | None = None
+) -> pd.DataFrame:
+    return load_dataset_internal(
+        file_path=file_path,
+        total_bolas=total_bolas,
+        extra_fields=extra_fields,
+        multiple_draws=multiple_draws,
+        special_handler=special_handler
+    )
+
+
+# =========================
+# SALVAR DATASET
+# =========================
+def save_dataset(
+    df: pd.DataFrame,
+    file_path: str,
+    total_bolas: int
+):
+    df = normalize_columns(df)
+    df = enrich_dataset(df, total_bolas)
+
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    df.to_excel(file_path, index=False)
+
+    st.cache_data.clear()
