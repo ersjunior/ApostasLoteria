@@ -43,7 +43,9 @@ rows = list_user_games(lottery_key_filter, limit=200)
 section("📋 Jogos salvos")
 
 if not rows:
-    st.info("Nenhum jogo no histórico ainda. Salve a partir de **Verificação** ou **Combinações Inéditas**.")
+    st.info(
+        "Nenhum jogo no histórico ainda. Salve a partir de **Verificação** ou **Combinações Inéditas**."
+    )
     responsible_gaming_footer()
     st.stop()
 

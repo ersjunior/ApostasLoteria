@@ -1,4 +1,4 @@
-﻿"""Identidade pública do autor (fonte única para UI e docs alinhados)."""
+"""Identidade pública do autor (fonte única para UI e docs alinhados)."""
 
 from __future__ import annotations
 

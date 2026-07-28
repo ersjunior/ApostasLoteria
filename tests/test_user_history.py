@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.services.user_history import export_history_csv
 from loterias_core.storage import init_db
 from loterias_core.user_history import (
     SOURCE_COMBINATIONS,
@@ -12,7 +13,6 @@ from loterias_core.user_history import (
     delete_user_game,
     list_user_games,
 )
-from app.services.user_history import export_history_csv
 
 
 def test_add_list_delete_user_game(db_path):

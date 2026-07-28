@@ -65,7 +65,10 @@ def lottery_badge(name: str, config: dict[str, Any], detail: str | None = None) 
     theme = get_theme()
     accent = config.get("color") or theme["primary"]
     icon = config.get("icon", "🎲")
-    body = detail or f"{config.get('total_bolas', '?')} dezenas · universo {config.get('universo', '?')}"
+    body = (
+        detail
+        or f"{config.get('total_bolas', '?')} dezenas · universo {config.get('universo', '?')}"
+    )
     st.markdown(
         f"""
         <div style="

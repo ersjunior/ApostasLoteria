@@ -97,7 +97,9 @@ def generate_statistics_pdf(df, total_bolas: int, titulo: str = "Relatório Esta
     try:
         elements.append(Image(_plotly_to_image(fig_bar), width=500, height=280))
     except Exception:
-        logger.warning("Gráfico de frequência omitido no PDF (Kaleido/Chrome indisponível).", exc_info=True)
+        logger.warning(
+            "Gráfico de frequência omitido no PDF (Kaleido/Chrome indisponível).", exc_info=True
+        )
         elements.append(
             Paragraph(
                 "Gráfico de frequência indisponível neste ambiente.",
