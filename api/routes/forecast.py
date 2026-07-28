@@ -1,3 +1,5 @@
+"""Rota de geração de combinações inéditas (forecast)."""
+
 from __future__ import annotations
 
 import logging
@@ -15,13 +17,13 @@ router = APIRouter()
 
 
 @router.get("/")
-@limiter.limit(get_settings().rate_limit_combinations)
-def generate_combinations(
+@limiter.limit(get_settings().rate_limit_forecast)
+def forecast(
     request: Request,
     query: NGamesQuery = Depends(n_games_query),
 ):
     """
-    Gera combinações inéditas da Mega-Sena por sorteio aleatório (sem modelo preditivo).
+    Gera jogos da Mega-Sena que ainda não apareceram no histórico (combinações inéditas).
     """
     del request  # exigido pelo slowapi
     try:
@@ -35,7 +37,7 @@ def generate_combinations(
         return {
             "n_games": query.n,
             "games": games,
-            "message": "Combinações inéditas geradas com sucesso",
+            "message": "Jogos inéditos gerados com sucesso",
         }
     except FileNotFoundError:
         raise HTTPException(
@@ -43,8 +45,8 @@ def generate_combinations(
             detail="Dataset não encontrado. Por favor, atualize o dataset primeiro (POST /dataset/).",
         ) from None
     except Exception as exc:
-        logger.exception("Erro ao gerar combinações")
+        logger.exception("Erro ao gerar forecast")
         raise HTTPException(
             status_code=500,
-            detail=f"Erro ao gerar combinações: {exc}",
+            detail=f"Erro ao gerar jogos: {exc}",
         ) from exc

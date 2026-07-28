@@ -259,7 +259,7 @@ pre-commit install
 streamlit run app/Home.py
 ```
 
-Para a API localmente, execute `uvicorn api.main:app --reload` a partir da raiz do projeto (requer o extra `api`, já incluído no comando acima). Detalhes adicionais em [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
+Para a API localmente, execute `uvicorn api.main:app --reload` a partir da raiz do projeto (requer o extra `api`, já incluído no comando acima). A API expõe `GET /health` para health check, CORS configurável via `CORS_ORIGINS`, rate limiting em rotas sensíveis e validação Pydantic com respostas de erro `{detail, code}`. Detalhes em [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
 
 ### Qualidade de código
 

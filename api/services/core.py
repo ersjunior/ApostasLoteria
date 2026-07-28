@@ -1,10 +1,16 @@
 """Serviços core da API — delegam ao pacote loterias_core."""
 
+from __future__ import annotations
+
+import logging
 import os
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 from loterias_core.generator import generate_unique_combinations
 from loterias_core.lotteries import LOTTERIES_BY_KEY
@@ -31,6 +37,33 @@ def _atomic_write_csv(df: pd.DataFrame, file_path: str) -> None:
         raise
 
 
+def get_dataset_status() -> dict:
+    """Metadados do CSV da Mega-Sena para /health e GET /dataset/."""
+    path = Path(DATASET_PATH)
+    if not path.exists():
+        return {
+            "exists": False,
+            "path": DATASET_PATH,
+            "last_update": None,
+            "total_records": None,
+        }
+
+    mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC).isoformat()
+    try:
+        df = pd.read_csv(path)
+        total_records = len(df)
+    except Exception:
+        logger.exception("Falha ao ler metadados do dataset em %s", DATASET_PATH)
+        total_records = None
+
+    return {
+        "exists": True,
+        "path": DATASET_PATH,
+        "last_update": mtime,
+        "total_records": total_records,
+    }
+
+
 def load_dataset():
     """Carrega o dataset da Mega-Sena (CSV legado da API)."""
     if not os.path.exists(DATASET_PATH):
@@ -42,9 +75,11 @@ def load_dataset():
 
 def update_dataset(source: DataSource | str = DataSource.AUTO):
     """Atualiza o dataset baixando a versão mais recente com scraper resiliente."""
+    logger.info("Iniciando download da base Mega-Sena (source=%s)", source)
     try:
         df_raw = download_lottery_data("megasena", source=source)
     except ScraperError as exc:
+        logger.exception("Scraper falhou ao baixar Mega-Sena")
         raise RuntimeError(str(exc)) from exc
 
     df = df_raw.copy()
@@ -64,6 +99,7 @@ def update_dataset(source: DataSource | str = DataSource.AUTO):
     df = df[df["jogo"].apply(len) == 6]
 
     _atomic_write_csv(df, DATASET_PATH)
+    logger.info("Dataset Mega-Sena persistido em %s (%d registros)", DATASET_PATH, len(df))
     return df
 
 

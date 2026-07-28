@@ -26,6 +26,8 @@ api = [
     "uvicorn[standard]==0.34.0",
     "pydantic==2.12.5",
     "scikit-learn==1.8.0",
+    "slowapi==0.1.9",
+    "httpx==0.28.1",
 ]
 dev = [
     "pytest==9.0.2",

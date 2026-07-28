@@ -145,10 +145,27 @@ Para consultar metadados do CSV: `GET /dataset/`.
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
+| `GET` | `/health` | Status da API e metadados do dataset (`exists`, `last_update`, `total_records`) |
 | `POST` | `/verify/` | Verifica se um jogo da Mega-Sena já foi sorteado (`{"numbers": [1, 5, 12, 23, 34, 56]}`) |
 | `GET` | `/combinations/?n=10` | Gera até 100 combinações inéditas da Mega-Sena (sorteio aleatório) |
+| `GET` | `/forecast/?n=10` | Alias de combinações inéditas (Mega-Sena) |
 | `GET` | `/dataset/` | Informações sobre o CSV carregado |
-| `POST` | `/dataset/` | Baixa e atualiza `app/data/megasena.csv` |
+| `POST` | `/dataset/` | Baixa e atualiza `app/data/megasena.csv` (rate limit: 3/h por padrão) |
+
+### Variáveis de ambiente (API)
+
+| Variável | Padrão | Descrição |
+|----------|--------|-----------|
+| `LOG_LEVEL` | `INFO` | Nível de log (`DEBUG`, `INFO`, `WARNING`, …) |
+| `ENVIRONMENT` | `development` | `production` restringe CORS se `CORS_ORIGINS` não estiver definido |
+| `CORS_ORIGINS` | *(vazio)* | Origens permitidas separadas por vírgula (ex.: `http://localhost:8501`) |
+| `MAX_BODY_BYTES` | `10240` | Tamanho máximo do corpo HTTP (bytes) |
+| `MAX_FORECAST_N` | `100` | Limite máximo do parâmetro `n` em `/forecast/` e `/combinations/` |
+| `RATE_LIMIT_DATASET` | `3/hour` | Rate limit do `POST /dataset/` |
+| `RATE_LIMIT_FORECAST` | `30/minute` | Rate limit do `GET /forecast/` |
+| `RATE_LIMIT_COMBINATIONS` | `60/minute` | Rate limit do `GET /combinations/` |
+
+Respostas de erro seguem o formato JSON `{ "detail": "...", "code": "..." }` (ex.: `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`).
 
 ---
 

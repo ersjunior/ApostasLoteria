@@ -1,35 +1,29 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from __future__ import annotations
 
+import logging
+
+from fastapi import APIRouter, HTTPException
+
+from api.schemas import GameRequest
 from api.services.core import load_dataset
 from loterias_core.validator import check_game
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class Game(BaseModel):
-    numbers: list[int]
-
-
 @router.post("/")
-def verify(game: Game):
+def verify(game: GameRequest):
     """
-    Verifica se um jogo da Mega-Sena já foi sorteado
+    Verifica se um jogo da Mega-Sena já foi sorteado.
     """
-    if len(game.numbers) != 6:
-        raise HTTPException(
-            status_code=400, detail="Um jogo da Mega-Sena deve ter exatamente 6 números"
-        )
-
-    if not all(1 <= n <= 60 for n in game.numbers):
-        raise HTTPException(status_code=400, detail="Os números devem estar entre 1 e 60")
-
     try:
         df = load_dataset()
-        found = check_game(sorted(game.numbers), df)
+        numbers = sorted(game.numbers)
+        found = check_game(numbers, df)
 
         return {
-            "numbers": sorted(game.numbers),
+            "numbers": numbers,
             "found": found,
             "message": "Jogo já foi sorteado" if found else "Jogo nunca foi sorteado",
         }
@@ -38,5 +32,9 @@ def verify(game: Game):
             status_code=404,
             detail="Dataset não encontrado. Por favor, atualize o dataset primeiro.",
         ) from None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao verificar jogo: {str(e)}") from e
+    except Exception as exc:
+        logger.exception("Erro ao verificar jogo")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao verificar jogo: {exc}",
+        ) from exc
