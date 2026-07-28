@@ -22,7 +22,7 @@ from app.ui.theme import page_title, responsible_gaming_footer, section
 
 st.set_page_config(page_title="Histórico de Jogos", layout="wide")
 
-render_app_chrome(show_lottery=True)
+render_app_chrome()
 
 page_title(
     "📜 Histórico de Jogos",

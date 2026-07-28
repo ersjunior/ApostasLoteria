@@ -18,7 +18,7 @@ from app.ui.theme import card, page_title, responsible_gaming_footer, section
 # =========================
 st.set_page_config(page_title="Feito por", layout="wide")
 
-render_app_chrome(show_lottery=False)
+render_app_chrome()
 
 # =========================
 # TÍTULO

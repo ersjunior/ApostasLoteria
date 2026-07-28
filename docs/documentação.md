@@ -630,19 +630,16 @@ Fachada sobre as funções `user_games` do storage. Define as constantes de orig
 
 ## 12. A aplicação Streamlit
 
-A UI é **multipage**: `app/Home.py` é a raiz e a pasta `app/pages/` gera automaticamente o menu lateral. Todas as páginas seguem o mesmo padrão: configuram a página, renderizam o **chrome global** (sidebar) e usam os componentes de `app/ui/theme.py`.
+A UI é **multipage**: `app/Home.py` é a raiz e a pasta `app/pages/` gera automaticamente o menu lateral. Todas as páginas seguem o mesmo padrão: configuram a página, aplicam o **tema global** e usam os componentes de `app/ui/theme.py`.
 
 ### 12.1 Chrome global — `app/ui/shell.py`
 
-A função **`render_app_chrome(show_lottery=True)`** é chamada em toda página **após** `st.set_page_config`. Ela:
+O módulo expõe duas funções:
 
-1. Inicializa o tema (`init_theme`).
-2. Renderiza o cabeçalho da sidebar (`## Controles` + legenda).
-3. Renderiza o **seletor de loteria** (quando `show_lottery=True`), persistido em `st.session_state["selected_lottery"]`.
-4. Sincroniza o **radio de tema** (claro/escuro) e aplica o CSS (`apply_theme`).
-5. Retorna `(nome, config)` da loteria selecionada, ou `None` quando a página não usa loteria (ex.: "Feito por").
+- **`render_app_chrome()`** — chamada em toda página **após** `st.set_page_config`. Fixa o tema **escuro** (`st.session_state.theme = "dark"`) e aplica o CSS via `apply_theme()`. O tema claro foi descontinuado e não há mais seletor de tema.
+- **`render_lottery_picker(...)`** — renderiza o **seletor de loteria no corpo** da página (logo abaixo do título), persistido em `st.session_state["selected_lottery"]`, e retorna `(nome, config)`. As páginas analíticas (Estatísticas, Verificação, Combinações) chamam esse seletor após o `page_title`; páginas sem loteria (Home, Feito por, Histórico) não o utilizam.
 
-Isso elimina a duplicação de seletores em cada página e garante que a preferência de modalidade/tema **persista na navegação**.
+Como a chave de sessão é compartilhada, a modalidade escolhida **persiste ao navegar** entre as páginas, mesmo com o seletor no corpo.
 
 ### 12.2 Temas — `theme_manager.py` e `theme.py`
 
@@ -662,12 +659,12 @@ Um `st.selectbox` reutilizável (na sidebar ou no corpo) que lê `LOTTERIES` e r
 
 ### 12.4 Página inicial — `Home.py`
 
-Ponto de entrada e hub de navegação. Configura `layout="wide"`, chama `render_app_chrome(show_lottery=True)` e apresenta:
+Ponto de entrada e hub de navegação. Configura `layout="wide"`, chama `render_app_chrome()` (tema escuro) e apresenta:
 
 - Boas-vindas e proposta do projeto.
 - **Seção "📌 O que este sistema oferece"** — quatro `card` de funcionalidade. Cada cartão traz um `footer` indicando **onde a funcionalidade vive**: Verificação, Combinações Inéditas e Estatísticas apontam para suas páginas próprias; **"💰 Custos e Probabilidades"** é explicitamente marcado como **seção da página Estatísticas** (não é uma página separada), evitando sugerir uma navegação inexistente.
 - Seção "🎲 Loterias suportadas" e "📂 Status das Bases".
-- Um passo a passo de uso, incluindo a instrução **"3️⃣ Selecione a loteria e o tema"** apontando para o painel lateral de Controles.
+- Um passo a passo de uso, incluindo a instrução **"3️⃣ Selecione a loteria"** apontando para o seletor no corpo de cada página analítica (logo abaixo do título).
 - Rodapé de jogo responsável.
 
 ### 12.5 Página `1_📊_Estatísticas.py`
@@ -713,7 +710,7 @@ A página mais rica. Passo a passo do que o usuário vê, de cima para baixo:
 Permite conferir se jogos já foram sorteados.
 
 - **Cabeçalho** + badge com o detalhe "Insira jogos com N dezenas".
-- **Seção "📝 Inserção dos Jogos"** — slider **"Quantidade de jogos"** (1–20). Para cada jogo, um `text_input` **"{ícone} Jogo {n}"** (dezenas separadas por vírgula) organizado em 3 colunas. Quando a modalidade tem `extra_fields`, campos extras adicionais aparecem (ex.: trevos), ignorando metacampos `_universo`.
+- **Seção "📝 Inserção dos Jogos"** — slider **"Quantidade de jogos"** (1–100). Para cada jogo, um `text_input` **"{ícone} Jogo {n}"** (dezenas separadas por vírgula) organizado em 3 colunas. Quando a modalidade tem `extra_fields`, campos extras adicionais aparecem (ex.: trevos), ignorando metacampos `_universo`.
 - **Botão "{ícone} Verificar Jogos"** — valida cada entrada (dígitos, quantidade exata de dezenas), chama `check_game` e produz resultados classificados: `success` ("Já foi sorteado 🎉"), `warning` ("Nunca foi sorteado 🔍") ou `error` ("Formato inválido"/"Informe exatamente N dezenas"). Os resultados ficam no `session_state`, invalidados ao trocar de modalidade.
 - **Seção "📋 Resultados"** — cards de status em grade de 5 colunas.
 - **Botão "💾 Salvar jogos válidos no histórico"** — persiste os jogos válidos em `user_games` com origem `SOURCE_VERIFY`.
@@ -725,14 +722,14 @@ Gera combinações que nunca saíram.
 
 - **Cabeçalho** + badge + `st.info` reforçando que é **sorteio aleatório uniforme, sem ML nem previsão**.
 - Carrega o dataset (necessário para saber o que já saiu).
-- **Seção "✨ Gerar Combinações"** — slider **"Quantidade de jogos"** (1–20, padrão 10) e botão **"{ícone} Gerar {n} Jogos Inéditos"** (rótulo dinâmico conforme o slider) que chama `generate_unique_combinations` com `n_games` selecionado e guarda os jogos no `session_state` (chave por modalidade).
+- **Seção "✨ Gerar Combinações"** — slider **"Quantidade de jogos"** (1–100, padrão 10) e botão **"{ícone} Gerar {n} Jogos Inéditos"** (rótulo dinâmico conforme o slider) que chama `generate_unique_combinations` com `n_games` selecionado e guarda os jogos no `session_state` (chave por modalidade).
 - **Seção "📋 Jogos Gerados"** — `game_card` para cada jogo, em grade de 3 colunas, com dezenas, status "❌ Nunca sorteado", cor de acento da modalidade, fundo pastel (helper `pastel_color` converte hex em `rgba` translúcido) e extras.
 - **Seção "📥 Exportar / Histórico"** — botão **"📄 Baixar jogos em CSV"** (via `export_csv`) e botão **"💾 Salvar no histórico"** (origem `SOURCE_COMBINATIONS`).
 - Rodapé de jogo responsável.
 
 ### 12.8 Página `4_👨‍💻_Feito por.py`
 
-Página institucional sobre o autor. Chama `render_app_chrome(show_lottery=False)` (não precisa de loteria). Seções:
+Página institucional sobre o autor. Chama `render_app_chrome()` (tema escuro; não usa loteria). Seções:
 
 - **"👋 Sobre mim"** — apresentação e áreas de atuação.
 - **"🔗 Conecte-se comigo"** — dois cards (GitHub e LinkedIn) com `st.link_button` para as URLs de `app/author.py`.

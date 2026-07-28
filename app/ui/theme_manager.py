@@ -32,15 +32,6 @@ THEMES = {
 # =========================
 # ESTADO DO TEMA
 # =========================
-def init_theme():
-    if "theme" not in st.session_state:
-        st.session_state.theme = "dark"
-
-
-def toggle_theme():
-    st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
-
-
 def get_theme():
     name = st.session_state.get("theme", "dark")
     return THEMES.get(name, THEMES["dark"])

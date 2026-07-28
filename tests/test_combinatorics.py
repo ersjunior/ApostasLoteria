@@ -145,3 +145,39 @@ def test_chi_square_from_frequency_helper():
     result = chi_square_uniformity_test(freq, universo=60)
     assert result.degrees_of_freedom == 59
     assert result.statistic >= 0
+
+
+@pytest.mark.parametrize(
+    ("key", "universo", "total_bolas"),
+    [
+        ("megasena", 60, 6),
+        ("quina", 80, 5),
+        ("lotomania", 100, 50),
+        ("mais_milionaria", 50, 6),
+    ],
+)
+def test_chi_square_no_overflow_real_scale(key, universo, total_bolas):
+    """Regressão: graus de liberdade altos não podem estourar (OverflowError)."""
+    import random
+
+    random.seed(7)
+    counts = dict.fromkeys(range(1, universo + 1), 0)
+    for _ in range(2800):
+        for dezena in random.sample(range(1, universo + 1), total_bolas):
+            counts[dezena] += 1
+
+    result = chi_square_uniformity_test(pd.Series(counts), universo=universo)
+    assert result.degrees_of_freedom == universo - 1
+    assert 0.0 <= result.p_value <= 1.0
+    assert result.statistic >= 0
+
+
+def test_chi2_survival_matches_reference_values():
+    """Cauda superior χ² próxima de valores tabelados (implementação sem SciPy)."""
+    from loterias_core.statistics import _chi2_sf
+
+    assert abs(_chi2_sf(59.0, 59) - 0.4736) < 1e-2
+    assert abs(_chi2_sf(100.0, 59) - 0.000672) < 5e-4
+    assert abs(_chi2_sf(9.0, 9) - 0.4373) < 1e-2
+    # Cauda praticamente nula para desvio extremo (não deve estourar).
+    assert _chi2_sf(1e6, 59) == 0.0

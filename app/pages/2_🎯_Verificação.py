@@ -11,7 +11,7 @@ if str(root_dir) not in sys.path:
 from app.services.dataset import load_dataset
 from app.services.user_history import SOURCE_VERIFY, add_user_games
 from app.services.validator import check_game
-from app.ui.shell import render_app_chrome
+from app.ui.shell import render_app_chrome, render_lottery_picker
 from app.ui.theme import lottery_badge, page_title, responsible_gaming_footer, section
 
 # =========================
@@ -19,11 +19,12 @@ from app.ui.theme import lottery_badge, page_title, responsible_gaming_footer, s
 # =========================
 st.set_page_config(page_title="Verificação de Jogos", layout="wide")
 
-lottery_name, config = render_app_chrome(show_lottery=True)
+render_app_chrome()
 
 page_title(
     "🎯 Verificação de Jogos", "Confira se seus jogos já foram sorteados em diferentes loterias"
 )
+lottery_name, config = render_lottery_picker()
 lottery_badge(
     lottery_name,
     config,
@@ -59,7 +60,7 @@ st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
 n_games = st.slider(
     "Quantidade de jogos",
     min_value=1,
-    max_value=20,
+    max_value=100,
     value=5,
     key="verify_n_games",
 )

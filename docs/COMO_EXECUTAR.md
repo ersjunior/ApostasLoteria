@@ -73,7 +73,7 @@ O Streamlit **não** baixa dados automaticamente. É necessário carregar a base
 2. Em **"📤 Upload Manual do XLSX"**, selecione a loteria correspondente e envie o arquivo.
 3. O sistema valida o XLSX, processa e **grava no SQLite** (`app/data/loterias.db`).
 4. Confira o **"📂 Status das Bases"** na página inicial — loterias já persistidas no banco aparecem com ✅.
-5. No painel **Controles** (sidebar), escolha a **loteria** e o **tema** (claro/escuro) — a preferência permanece ao navegar.
+5. Em cada página analítica, escolha a **loteria** no seletor **logo abaixo do título** — a preferência permanece ao navegar. O tema é sempre o **escuro**.
 6. Navegue pelas páginas no menu lateral:
    - **📊 Estatísticas** — frequência clássica, análises específicas (trevos, Dupla Sena, Super Sete, Timemania) + PDF (Gerar → Baixar)
    - **🎯 Verificação** — conferir jogos + salvar no histórico local
@@ -346,7 +346,7 @@ uvicorn api.main:app --reload --port 8001
 
 - **Persistência unificada:** Streamlit e API usam `app/data/loterias.db` (SQLite: `draws`, `lottery_metadata`, `user_games`).
 - **XLSX:** formato de ingestão da Caixa (upload ou scraper); não é o store de leitura das páginas.
-- **Sidebar Controles:** loteria (`selected_lottery`) e tema claro/escuro persistem entre páginas; upload usa key `upload_lottery` separada.
+- **Seletor de loteria:** fica no corpo de cada página analítica (abaixo do título), persistido em `selected_lottery` entre páginas; o upload na Home usa key `upload_lottery` separada. O tema é fixo (escuro).
 - **API:** multi-loteria (`/lotteries/{key}/...`) com aliases Mega-Sena; preferir rotas canônicas.
 - O gerador de combinações inéditas usa sorteio **aleatório uniforme** — não há modelo de machine learning em produção.
 - Projeto com finalidade **educacional**; sorteios são eventos aleatórios.

@@ -50,10 +50,10 @@ Nove modalidades no catálogo (`loterias_core/lotteries.py`):
 
 ### Interface Streamlit
 
-- **Controles na sidebar** — loteria e tema claro/escuro compartilhados entre páginas (`app/ui/shell.py`)
+- **Seletor de loteria no corpo** — abaixo do título de cada página analítica, compartilhado entre páginas; tema **escuro** fixo (`app/ui/shell.py`)
 - **Home** — visão do produto, status das bases no SQLite, upload do XLSX oficial
 - **Estatísticas** — frequência, qui-quadrado, valor esperado, C(n,k), Plotly, PDF; análises específicas (trevos, Dupla Sena, Super Sete, Timemania)
-- **Verificação** — 1–20 jogos com extras; salvamento no histórico local
+- **Verificação** — 1–100 jogos com extras; salvamento no histórico local
 - **Combinações inéditas** — sorteio aleatório uniforme (**sem ML**); CSV + histórico
 - **Histórico** — listar, filtrar, exportar, apagar e verificar novamente (`user_games`)
 - **Feito por** — perfil e links (`app/author.py` → GitHub `ersjunior`)
@@ -92,7 +92,7 @@ O **XLSX da Caixa** é só formato de **ingestão** (upload na Home ou `POST ...
 
 1. **Obtenha o XLSX oficial** em https://loterias.caixa.gov.br/ (ou use o scraper da API).
 2. **Home → sidebar** — upload do arquivo na loteria correta; confira **Status das Bases**.
-3. **Controles (sidebar)** — escolha modalidade e tema; a preferência permanece ao navegar.
+3. **Em cada página** — escolha a modalidade no seletor abaixo do título; a preferência permanece ao navegar.
 4. Explore **Estatísticas**, **Verificação**, **Combinações** e **Histórico**.
 
 Alternativa API: `POST /lotteries/{key}/dataset` (ou `POST /dataset/` para Mega-Sena) popula o mesmo banco.

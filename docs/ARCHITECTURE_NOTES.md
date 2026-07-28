@@ -52,7 +52,7 @@ ApostasLoteria/
 │   │   └── 5_📜_Histórico.py
 │   ├── services/               # wrappers Streamlit (@st.cache_data, report PDF, …)
 │   ├── ui/
-│   │   ├── shell.py            # sidebar global (loteria + tema)
+│   │   ├── shell.py            # tema escuro + seletor de loteria (no corpo)
 │   │   ├── lottery_selector.py
 │   │   ├── theme.py · theme_manager.py
 │   └── data/                   # loterias.db em runtime (gitignored)
@@ -100,7 +100,7 @@ ApostasLoteria/
 | Peça | Papel |
 |------|--------|
 | `Home.py` | Hero, status das bases, upload → `persist_dataset` |
-| `ui/shell.py` | `render_app_chrome`: tema + selectbox de loteria (`selected_lottery`) |
+| `ui/shell.py` | `render_app_chrome` (tema escuro) + `render_lottery_picker` (selectbox no corpo, `selected_lottery`) |
 | `pages/*` | Features; chrome no topo; badge de loteria onde faz sentido |
 | `services/*` | Cache Streamlit, reexports, `report.generate_statistics_pdf` |
 | `author.py` | `GITHUB_USER=ersjunior`, LinkedIn, nome de exibição |
@@ -157,8 +157,8 @@ Não há store operacional em CSV por loteria.
 
 ## 6. UI shell e tema
 
-1. Cada página chama `st.set_page_config` e em seguida `render_app_chrome(...)`.
-2. Sidebar **Controles**: loteria (`key=selected_lottery`, exceto Feito por) + radio Escuro/Claro.
+1. Cada página chama `st.set_page_config` e em seguida `render_app_chrome()` (fixa tema escuro + `apply_theme()`).
+2. **Seletor de loteria no corpo**: `render_lottery_picker()` renderiza o selectbox abaixo do título nas páginas analíticas (`key=selected_lottery`, compartilhado na navegação). Tema claro descontinuado — sem seletor de tema.
 3. `.streamlit/config.toml` define o tema de **boot** (dark); `theme_manager.apply_theme()` injeta CSS em runtime.
 4. Upload na Home usa key separada `upload_lottery` para não misturar com a modalidade de análise.
 

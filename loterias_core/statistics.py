@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import exp, lgamma
+from math import exp, lgamma, log
 
 import pandas as pd
+
+# Constantes numéricas da gama incompleta (Numerical Recipes)
+_GAMMAINCC_TINY = 1e-300
+_GAMMAINCC_EPS = 1e-14
+_GAMMAINCC_MAX_ITER = 500
 
 
 @dataclass(frozen=True)
@@ -18,46 +23,65 @@ class ChiSquareResult:
 
 
 def _gammaincc(a: float, x: float) -> float:
-    """Função gama incompleta superior normalizada Q(a, x)."""
-    if x < 0 or a <= 0:
+    """
+    Função gama incompleta superior regularizada Q(a, x) = 1 − P(a, x).
+
+    Implementação sem SciPy (Numerical Recipes): série de potências para
+    ``x < a + 1`` e fração continuada de Lentz para ``x ≥ a + 1``.
+
+    O fator de normalização é ``exp(-x + a·ln(x) − lnΓ(a))`` — numericamente
+    estável e limitado (≈ densidade gama no ponto). A versão anterior usava
+    ``exp(-x + a·lnΓ(a))``, cujo termo `a·lnΓ(a)` cresce sem limite e causava
+    ``OverflowError: math range error`` para graus de liberdade típicos
+    (ex.: Mega-Sena, df = 59 → a = 29.5).
+    """
+    if x <= 0.0 or a <= 0.0:
         return 1.0
-    if x < a + 1:
-        # Série de convergência
+
+    gln = lgamma(a)
+    # Fator comum ~ x^a · e^-x / Γ(a): limitado, não estoura.
+    prefactor = exp(-x + a * log(x) - gln)
+
+    if x < a + 1.0:
+        # Série → P(a, x) (cauda inferior); Q = 1 − P.
         ap = a
         summ = 1.0 / a
-        del_ = summ
-        for _n in range(1, 200):
+        term = summ
+        for _ in range(_GAMMAINCC_MAX_ITER):
             ap += 1.0
-            del_ *= x / ap
-            summ += del_
-            if abs(del_) < abs(summ) * 1e-10:
+            term *= x / ap
+            summ += term
+            if abs(term) < abs(summ) * _GAMMAINCC_EPS:
                 break
-        return summ * exp(-x + a * lgamma(a))
-    # Fração continuada de Lentz
+        p_lower = summ * prefactor
+        return min(max(1.0 - p_lower, 0.0), 1.0)
+
+    # Fração continuada de Lentz → Q(a, x) (cauda superior) diretamente.
     b = x + 1.0 - a
-    c = 1.0 / 1e-30
+    c = 1.0 / _GAMMAINCC_TINY
     d = 1.0 / b
     h = d
-    for i in range(1, 200):
+    for i in range(1, _GAMMAINCC_MAX_ITER):
         an = -i * (i - a)
         b += 2.0
         d = an * d + b
-        if abs(d) < 1e-30:
-            d = 1e-30
+        if abs(d) < _GAMMAINCC_TINY:
+            d = _GAMMAINCC_TINY
         c = b + an / c
-        if abs(c) < 1e-30:
-            c = 1e-30
+        if abs(c) < _GAMMAINCC_TINY:
+            c = _GAMMAINCC_TINY
         d = 1.0 / d
-        del_ = d * c
-        h *= del_
-        if abs(del_ - 1.0) < 1e-10:
+        delta = d * c
+        h *= delta
+        if abs(delta - 1.0) < _GAMMAINCC_EPS:
             break
-    return h * exp(-x + a * lgamma(a))
+    q_upper = h * prefactor
+    return min(max(q_upper, 0.0), 1.0)
 
 
 def _chi2_sf(x: float, df: int) -> float:
-    """Probabilidade da cauda superior da distribuição qui-quadrado."""
-    if x <= 0:
+    """Probabilidade da cauda superior (survival) da distribuição qui-quadrado."""
+    if x <= 0 or df <= 0:
         return 1.0
     return _gammaincc(df / 2.0, x / 2.0)
 

@@ -12,7 +12,7 @@ from app.combinations.generator import generate_unique_combinations
 from app.services.dataset import load_dataset
 from app.services.exporter import export_csv
 from app.services.user_history import SOURCE_COMBINATIONS, add_user_games
-from app.ui.shell import render_app_chrome
+from app.ui.shell import render_app_chrome, render_lottery_picker
 from app.ui.theme import game_card, lottery_badge, page_title, responsible_gaming_footer, section
 
 # =========================
@@ -20,7 +20,7 @@ from app.ui.theme import game_card, lottery_badge, page_title, responsible_gamin
 # =========================
 st.set_page_config(page_title="Combinações Inéditas", layout="wide")
 
-lottery_name, config = render_app_chrome(show_lottery=True)
+render_app_chrome()
 
 
 def pastel_color(hex_color: str, alpha=0.15):
@@ -35,6 +35,7 @@ page_title(
     "🔮 Gerador de Combinações Inéditas",
     "Sorteio aleatório de combinações que ainda não apareceram no histórico — sem poder preditivo",
 )
+lottery_name, config = render_lottery_picker()
 lottery_badge(
     lottery_name,
     config,
@@ -73,7 +74,7 @@ _games_key = f"combo_games_{config['key']}"
 n_games = st.slider(
     "Quantidade de jogos",
     min_value=1,
-    max_value=20,
+    max_value=100,
     value=10,
     key="combo_n_games",
 )

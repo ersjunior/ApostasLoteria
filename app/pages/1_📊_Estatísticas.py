@@ -20,7 +20,7 @@ from app.services.statistics import (
     frequency_by_draw,
     frequency_by_position,
 )
-from app.ui.shell import render_app_chrome
+from app.ui.shell import render_app_chrome, render_lottery_picker
 from app.ui.theme import lottery_badge, metric_card, page_title, responsible_gaming_footer, section
 from loterias_core.combinatorics import get_lottery_config_from_dict, win_probability
 from loterias_core.expected_value import calculate_expected_value
@@ -30,8 +30,7 @@ from loterias_core.expected_value import calculate_expected_value
 # =========================
 st.set_page_config(page_title="Estatísticas das Loterias", layout="wide")
 
-lottery_name, config = render_app_chrome(show_lottery=True)
-lottery_cfg = get_lottery_config_from_dict(config)
+render_app_chrome()
 
 
 def _format_brl(value: float) -> str:
@@ -39,6 +38,8 @@ def _format_brl(value: float) -> str:
 
 
 page_title("📊 Estatísticas das Loterias", "Análise histórica e estatística dos sorteios")
+lottery_name, config = render_lottery_picker()
+lottery_cfg = get_lottery_config_from_dict(config)
 lottery_badge(lottery_name, config)
 
 
@@ -132,11 +133,15 @@ if not freq.empty:
         """
     )
 
+    # p-valor sempre com 2 casas decimais; abaixo de 0,01 mostra "< 0.01"
+    # para não exibir "0.00" em resultados estatisticamente significativos.
+    p_display = f"{chi2.p_value:.2f}" if chi2.p_value >= 0.01 else "< 0.01"
+
     c1, c2, c3 = st.columns(3)
     with c1:
-        metric_card("Estatística χ²", f"{chi2.statistic:.4f}", "📐")
+        metric_card("Estatística χ²", f"{chi2.statistic:.2f}", "📐")
     with c2:
-        metric_card("p-valor", f"{chi2.p_value:.4f}", "📊")
+        metric_card("p-valor", p_display, "📊")
     with c3:
         metric_card("Graus de liberdade", str(chi2.degrees_of_freedom), "🧮")
 

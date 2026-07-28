@@ -24,7 +24,7 @@ configure_runtime()
 # =========================
 st.set_page_config(page_title="🍀 Loterias Analyzer", layout="wide")
 
-render_app_chrome(show_lottery=True)
+render_app_chrome()
 
 # =========================
 # HERO / HEADER
@@ -130,8 +130,8 @@ st.markdown(
     ### 2️⃣ Faça o upload dos arquivos
     Utilize o painel lateral para enviar os arquivos baixados ao sistema.
 
-    ### 3️⃣ Selecione a loteria e o tema
-    No **painel lateral (Controles)**, escolha a modalidade e o tema claro/escuro —
+    ### 3️⃣ Selecione a loteria
+    Em cada página analítica, escolha a modalidade no seletor **logo abaixo do título** —
     a preferência permanece ao navegar entre as páginas.
 
     ### 4️⃣ Explore as funcionalidades
