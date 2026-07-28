@@ -1,6 +1,12 @@
 # Loterias Analyzer — Streamlit + API FastAPI
 # Uso: docker compose up --build
-# Dados (XLSX/CSV em app/data) persistem no volume nomeado.
+#
+# Persistência: volume `apostas-data` montado em /app/app/data em ambos os serviços.
+# Streamlit grava XLSX por loteria; API grava megasena.csv — ambos no mesmo volume.
+#
+# Integração: o Streamlit consome loterias_core localmente (não chama a API por HTTP).
+# Os serviços são independentes e compartilham apenas o volume de dados.
+# Não há depends_on entre eles; API_BASE_URL não se aplica nesta arquitetura.
 
 services:
   streamlit:
@@ -12,6 +18,18 @@ services:
     volumes:
       - apostas-data:/app/app/data
     restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health').read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   api:
     build:
@@ -22,6 +40,18 @@ services:
     volumes:
       - apostas-data:/app/app/data
     restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   apostas-data:

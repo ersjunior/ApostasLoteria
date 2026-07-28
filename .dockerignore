@@ -1,7 +1,12 @@
-# Git e ambientes locais
+# Git e CI
 .git
 .gitignore
+.gitattributes
+.github
+
+# Ambientes e secrets
 .env
+.env.*
 .venv
 venv
 ENV
@@ -12,17 +17,45 @@ __pycache__
 *.py[cod]
 *$py.class
 *.egg-info
+.eggs
+dist
+build
 .pytest_cache
+.mypy_cache
+.ruff_cache
 .coverage
 htmlcov
+.tox
+*.egg
+apostas_loteria.egg-info
 
-# IDE
+# Testes e ferramentas de dev
+tests/
+requirements.txt
+requirements-api.txt
+requirements-dev.txt
+
+# Documentação (README.md é necessário no build)
+docs/
+*.md
+!README.md
+
+# IDE e tooling local
 .vscode
 .idea
+.cursor
+*.swp
+*.swo
 
-# Dados gerados (monte volume em runtime; evita copiar CSVs enormes do dev)
-app/data/*.csv
-app/data/*.xlsx
+# Dados locais (monte volume em runtime)
+app/data/*
+!app/data/.gitkeep
 
-# Docker
+# Docker (contexto de build não precisa do compose)
 docker-compose.override.yml
+docker-compose*.yml
+
+# Logs e SO
+*.log
+.DS_Store
+Thumbs.db
