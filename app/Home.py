@@ -11,7 +11,7 @@ if str(root_dir) not in sys.path:
 
 from app.core.lotteries import LOTTERIES
 from app.services.dataset import persist_dataset
-from app.ui.theme import card, page_title, section
+from app.ui.theme import card, page_title, responsible_gaming_footer, section
 from app.ui.theme_manager import apply_theme, init_theme
 from loterias_core.schema import DatasetSchemaError
 
@@ -255,3 +255,5 @@ for i in range(0, len(items), COLS_PER_ROW):
                 st.warning(f"⚠️ {name}")
 
 st.cache_data.clear()
+
+responsible_gaming_footer()

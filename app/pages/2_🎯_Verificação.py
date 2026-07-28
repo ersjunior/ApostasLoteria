@@ -11,7 +11,7 @@ if str(root_dir) not in sys.path:
 from app.core.lotteries import LOTTERIES
 from app.services.dataset import load_dataset
 from app.services.validator import check_game
-from app.ui.theme import page_title, section
+from app.ui.theme import page_title, responsible_gaming_footer, section
 from app.ui.theme_manager import apply_theme, init_theme
 
 # =========================
@@ -230,3 +230,5 @@ if st.button(f"{config['icon']} Verificar Jogos"):
                     st.warning(f"**{title}**\n\n{message}")
                 else:
                     st.error(f"**{title}**\n\n{message}")
+
+responsible_gaming_footer()

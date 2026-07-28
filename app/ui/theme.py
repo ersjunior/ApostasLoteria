@@ -164,3 +164,17 @@ def status_message(message: str, status: str = "info"):
         """,
         unsafe_allow_html=True,
     )
+
+
+RESPONSIBLE_GAMING_URL = "https://jogadoresanonimos.com.br/"
+
+
+def responsible_gaming_footer() -> None:
+    """Rodapé com aviso educacional e link de apoio a jogo compulsivo."""
+    st.markdown("---")
+    st.caption(
+        "Este projeto é **estritamente educacional** e analítico — nenhuma estatística "
+        "garante prêmios. Loterias são jogos de azar. "
+        f"Se você ou alguém próximo tem dificuldade com jogo compulsivo, "
+        f"busque apoio em [Jogadores Anônimos]({RESPONSIBLE_GAMING_URL})."
+    )

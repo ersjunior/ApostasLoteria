@@ -12,7 +12,7 @@ from app.combinations.generator import generate_unique_combinations
 from app.core.lotteries import LOTTERIES
 from app.services.dataset import load_dataset
 from app.services.exporter import export_csv
-from app.ui.theme import game_card, page_title, section
+from app.ui.theme import game_card, page_title, responsible_gaming_footer, section
 from app.ui.theme_manager import apply_theme, init_theme
 
 # =========================
@@ -140,3 +140,5 @@ if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
         f"combinacoes_ineditas_{config['key']}.csv",
         mime="text/csv",
     )
+
+responsible_gaming_footer()

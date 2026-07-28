@@ -9,7 +9,7 @@ if str(root_dir) not in sys.path:
 import requests
 import streamlit as st
 
-from app.ui.theme import card, page_title, section
+from app.ui.theme import card, page_title, responsible_gaming_footer, section
 from app.ui.theme_manager import apply_theme, init_theme
 
 # =========================
@@ -150,3 +150,5 @@ st.info(
     Fique à vontade para explorar, estudar e adaptar.
     """
 )
+
+responsible_gaming_footer()

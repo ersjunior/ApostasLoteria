@@ -11,7 +11,8 @@
 
 Uma plataforma **educacional e analítica** para estudo de loterias brasileiras, baseada em dados oficiais da Caixa Econômica Federal.
 
-> ⚠️ **Aviso:** Este projeto **não garante prêmios**. Todos os sorteios são eventos aleatórios.
+> ⚠️ **Aviso:** Este projeto **não garante prêmios**. Todos os sorteios são eventos aleatórios.  
+> Se você ou alguém próximo tem dificuldade com jogo compulsivo, busque apoio em [Jogadores Anônimos](https://jogadoresanonimos.com.br/).
 
 ---
 
@@ -26,6 +27,7 @@ O projeto oferece:
 - 📊 Estatísticas interativas com gráficos  
 - 💰 Simulação de custos e probabilidades reais  
 - 📄 Exportação de relatórios e dados  
+- 🌐 API REST (FastAPI) para Mega-Sena
 
 ---
 
@@ -68,8 +70,15 @@ O projeto oferece:
 - Gráficos interativos com Plotly
 - Simulação de custos e probabilidades
 
+### 🌐 API REST (Mega-Sena)
+- `GET /health` — health check e status do dataset
+- `POST /verify/` — verificação de jogos
+- `GET /combinations/` e `GET /forecast/` — combinações inéditas
+- `GET` / `POST /dataset/` — metadados e atualização via scraper
+- CORS, rate limiting, validação Pydantic e logging configuráveis
+
 ### 📄 Relatórios
-- Exportação de jogos em CSV (página Forecast)
+- Exportação de jogos em CSV
 
 ---
 
@@ -125,17 +134,37 @@ Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo:
 ## 🏗️ Estrutura do Projeto
 
 ```
+├── .github/
+│   ├── ISSUE_TEMPLATE/             # Templates de bug e feature
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows/
+│       ├── ci.yml                  # Lint, mypy, pytest, cobertura
+│       └── docker.yml              # Build das imagens Docker
 ├── api/                            # API REST (FastAPI)
+│   ├── config.py                   # Variáveis de ambiente
+│   ├── main.py
 │   ├── routes/
+│   │   ├── combinations.py
+│   │   ├── dataset.py
+│   │   ├── forecast.py
+│   │   ├── health.py               # GET /health
+│   │   └── verify.py
 │   └── services/
-├── loterias_core/                  # Domínio puro (combinatória, estatística, EV)
+│       └── core.py
+├── loterias_core/                  # Domínio puro (app + api consomem)
 │   ├── combinatorics.py
+│   ├── dataset.py
 │   ├── expected_value.py
+│   ├── generator.py
+│   ├── lotteries.py
+│   ├── schema.py
+│   ├── scraper.py
 │   ├── statistics.py
-│   └── generator.py
+│   └── validator.py
 ├── app/                            # Aplicação Streamlit
-│   ├── combinations/
-│   │   └── generator.py
+│   ├── core/
+│   │   └── lotteries.py
+│   ├── data/                       # Bases XLSX/CSV (gitignored)
 │   ├── pages/
 │   │   ├── 1_📊_Estatísticas.py
 │   │   ├── 2_🎯_Verificação.py
@@ -154,20 +183,32 @@ Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo:
 │   │   ├── theme_manager.py
 │   │   └── theme.py
 │   └── Home.py                     # entrypoint Streamlit
-├── docker/                         # Dockerfiles
-│        ├── Dockerfile.api
-│        └── Dockerfile.streamlit
-├── docker-compose.yml              # Orquestra Streamlit + API
-├── tests/                          # Testes automatizados
-|        ├── test_combinatorics.py
-|        ├── test_generator.py
-|        ├── test_statistics.py
-|        └── test_validator.py
+├── docker/
+│   ├── Dockerfile.api
+│   ├── Dockerfile.streamlit
+│   └── entrypoint.sh
+├── tests/
+│   ├── fixtures/                   # XLSX/CSV de teste por loteria
+│   ├── test_api.py
+│   ├── test_cache.py
+│   ├── test_combinatorics.py
+│   ├── test_dataset.py
+│   ├── test_exporter.py
+│   ├── test_generator.py
+│   ├── test_report.py
+│   ├── test_schema.py
+│   ├── test_scraper.py
+│   ├── test_statistics.py
+│   └── test_validator.py
+├── .env.example                    # Variáveis de ambiente (copie para .env)
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── docker-compose.yml
+├── docs/
+│   ├── ARCHITECTURE_NOTES.md
+│   ├── COMO_EXECUTAR.md
+│   └── README.md
 ├── pyproject.toml                  # Dependências e config (ruff, mypy, pytest)
-├── docs/                           # Documentação complementar
-│        ├── ARCHITECTURE_NOTES.md
-│        ├── COMO_EXECUTAR.md
-│        └── README.md
 ├── requirements.txt                # Atalho: pip install -e .
 ├── requirements-api.txt            # Atalho: pip install -e .[api]
 └── README.md
@@ -179,10 +220,36 @@ Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo:
 
 - 🐍 Python 3.11+
 - 🎨 Streamlit
+- ⚡ FastAPI + Uvicorn
 - 📊 Pandas & NumPy
 - 📈 Plotly
 - 📄 ReportLab
 - 📁 XLSX oficiais da Caixa
+- 🔧 Ruff, mypy, pytest, pre-commit
+
+---
+
+## 🔧 Variáveis de ambiente
+
+Copie o exemplo e ajuste conforme necessário:
+
+```bash
+cp .env.example .env          # Linux/macOS
+copy .env.example .env        # Windows
+```
+
+| Variável | Padrão | Descrição |
+|----------|--------|-----------|
+| `LOG_LEVEL` | `INFO` | Nível de log da API |
+| `ENVIRONMENT` | `development` | `production` restringe CORS se `CORS_ORIGINS` vazio |
+| `CORS_ORIGINS` | *(vazio)* | Origens permitidas, separadas por vírgula |
+| `MAX_BODY_BYTES` | `10240` | Limite de payload HTTP (bytes) |
+| `MAX_FORECAST_N` | `100` | Máximo do parâmetro `n` em forecast/combinations |
+| `RATE_LIMIT_DATASET` | `3/hour` | Rate limit do `POST /dataset/` |
+| `RATE_LIMIT_FORECAST` | `30/minute` | Rate limit do `GET /forecast/` |
+| `RATE_LIMIT_COMBINATIONS` | `60/minute` | Rate limit do `GET /combinations/` |
+
+> O Streamlit **não** consome a API por HTTP; `API_BASE_URL` não se aplica na arquitetura atual. Detalhes em [`.env.example`](.env.example) e [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
 
 ---
 
@@ -205,6 +272,7 @@ Isso sobe:
 | Streamlit | http://localhost:8501       |
 | API (FastAPI) | http://localhost:8000   |
 | Documentação Swagger | http://localhost:8000/docs |
+| Health check | http://localhost:8000/health |
 
 Os dados em `app/data/` (arquivos enviados ou gerados pela app) ficam no volume Docker `apostas-data` e persistem entre reinícios dos containers.
 
@@ -253,6 +321,9 @@ source .venv/bin/activate
 # instalar dependências (app + API + ferramentas de dev)
 pip install -e ".[dev,api]"
 
+# variáveis de ambiente (opcional, principalmente para a API)
+cp .env.example .env
+
 # hooks de qualidade (opcional, recomendado)
 pre-commit install
 
@@ -260,7 +331,13 @@ pre-commit install
 streamlit run app/Home.py
 ```
 
-Para a API localmente, execute `uvicorn api.main:app --reload` a partir da raiz do projeto (requer o extra `api`, já incluído no comando acima). A API expõe `GET /health` para health check, CORS configurável via `CORS_ORIGINS`, rate limiting em rotas sensíveis e validação Pydantic com respostas de erro `{detail, code}`. Detalhes em [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
+Para a API localmente:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+A API expõe `GET /health` para health check, CORS configurável via `CORS_ORIGINS`, rate limiting em rotas sensíveis e validação Pydantic com respostas de erro `{detail, code}`. Detalhes em [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
 
 ### Qualidade de código
 
@@ -268,18 +345,42 @@ Para a API localmente, execute `uvicorn api.main:app --reload` a partir da raiz 
 ruff check .
 ruff format --check .
 pytest
-mypy app api   # modo gradual (ignore_missing_imports)
+mypy app api loterias_core
 ```
-
-Mais documentação em [docs/](docs/README.md) (arquitetura, guias complementares).
 
 ---
 
-## ⚠️ Aviso Legal
+## 🔄 CI (GitHub Actions)
 
-Este projeto é **educacional**.  
+O badge no topo aponta para o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+
+| Job | O que faz |
+|-----|-----------|
+| **lint-test** | Ruff lint + format, mypy (continue-on-error), pytest com cobertura mínima 60% |
+| Matriz | Python **3.11** e **3.12** |
+| Artefato | `coverage.xml` (Python 3.11) |
+
+Workflow adicional [`.github/workflows/docker.yml`](.github/workflows/docker.yml) valida o build das imagens API e Streamlit em cada PR/push.
+
+---
+
+## 🤝 Contribuindo
+
+Leia [CONTRIBUTING.md](CONTRIBUTING.md) para configurar o ambiente, rodar testes, padrão de commits e abrir PRs. Use os templates em [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) para bugs e features.
+
+Histórico de mudanças: [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## ⚠️ Aviso Legal e Jogo Responsável
+
+Este projeto é **estritamente educacional e analítico**.  
 Jogos de loteria são eventos **aleatórios**.  
 Nenhuma análise estatística garante prêmio.
+
+Se você ou alguém próximo tem dificuldade com **jogo compulsivo**, procure apoio gratuito em [Jogadores Anônimos](https://jogadoresanonimos.com.br/). Para apoio emocional imediato, ligue **188** (CVV — Centro de Valorização da Vida).
+
+A interface Streamlit exibe uma nota de jogo responsável no rodapé de todas as páginas.
 
 ---
 
@@ -297,6 +398,8 @@ Especialista em Dados, Engenharia e Inteligência Artificial.
 
 - [x] API REST (FastAPI)
 - [x] Docker / Compose
+- [x] CI (lint, testes, cobertura)
+- [x] Pacote `loterias_core` compartilhado
 - [ ] Histórico de jogos do usuário
 - [ ] Cache avançado por loteria
 - [ ] Deploy em cloud (Streamlit Cloud / cloud provider)

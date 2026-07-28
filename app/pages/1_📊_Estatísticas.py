@@ -13,7 +13,7 @@ import streamlit as st
 from app.core.lotteries import LOTTERIES
 from app.services.dataset import load_dataset
 from app.services.statistics import chi_square_uniformity_test, empirical_probability, frequency
-from app.ui.theme import metric_card, page_title, section
+from app.ui.theme import metric_card, page_title, responsible_gaming_footer, section
 from app.ui.theme_manager import apply_theme, init_theme
 from loterias_core.combinatorics import get_lottery_config_from_dict, win_probability
 from loterias_core.expected_value import calculate_expected_value
@@ -328,3 +328,5 @@ st.info(
 Este painel é **educacional e analítico**.
 """
 )
+
+responsible_gaming_footer()
