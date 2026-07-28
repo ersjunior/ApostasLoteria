@@ -7,6 +7,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-28
+
+Release inicial completo: plataforma de análise estatística, verificação de jogos
+e geração de combinações inéditas para as loterias brasileiras (Streamlit + API
+FastAPI + núcleo de domínio `loterias_core` sobre SQLite).
+
 ### Added
 
 - Persistência em **SQLite** (`app/data/loterias.db`) compartilhada entre Streamlit e API — elimina condição de corrida entre XLSX/CSV.
@@ -76,5 +82,6 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 Versão inicial publicada: Streamlit, API FastAPI básica e Docker Compose.
 
-[Unreleased]: https://github.com/ersjunior/ApostasLoteria/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ersjunior/ApostasLoteria/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ersjunior/ApostasLoteria/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/ersjunior/ApostasLoteria/releases/tag/v0.1.0
