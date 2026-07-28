@@ -20,6 +20,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Fixed
 
+- **Estatísticas / valor esperado**: corrigido `KeyError` (ex.: `KeyError: 21`) ao selecionar mais dezenas do que a `price_table` da modalidade suporta. O slider **"Quantidade de dezenas por aposta"** passa a ser limitado ao maior desdobramento com preço definido (não ao `universo`), e `calculate_expected_value` agora levanta um `ValueError` claro (em vez de `KeyError` cru) para quantidades sem preço. Afetava Mega-Sena (>20), Quina/Dupla Sena/Dia de Sorte (>15), Lotofácil (>20), Lotomania/Timemania/+Milionária (qualquer valor acima do fixo).
 - **Estatísticas / teste qui-quadrado**: corrigido `OverflowError: math range error` em `chi_square_uniformity_test`. A função gama incompleta (`_gammaincc`) usava o fator `exp(-x + a·lnΓ(a))` (incorreto e sem limite superior) e o ramo da série retornava a cauda inferior. Agora usa o fator estável `exp(-x + a·ln(x) − lnΓ(a))` e retorna corretamente `Q(a,x) = 1 − P`. Afetava todas as loterias (a Mega-Sena, com df = 59, quebrava ao abrir a página).
 - **Ambiente de testes**: `pytest` deixava de coletar `tests/test_api.py` em venvs com apenas `[dev]` instalado, por falta de `httpx`/`fastapi`. Resolvido ao fazer `[dev]` incluir `[api]`.
 - **Home**: correção de typo — "arquivos baixado" → "arquivos baixados".

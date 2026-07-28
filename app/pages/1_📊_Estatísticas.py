@@ -165,15 +165,23 @@ col_input, col_output = st.columns([1, 1])
 with col_input:
     qtd_apostas = st.slider("🎟️ Quantidade de apostas", min_value=1, max_value=100, value=1)
 
-    if config["total_bolas"] >= config["universo"]:
-        qtd_dezenas = config["total_bolas"]
+    # O máximo de dezenas por aposta é o limite de desdobramento com preço
+    # definido na price_table (não o universo), evitando selecionar uma
+    # quantidade sem preço/probabilidade válida.
+    price_dezenas = sorted(config["price_table"].keys())
+    min_dezenas = min(price_dezenas)
+    max_dezenas = min(max(price_dezenas), config["universo"])
+
+    if max_dezenas <= min_dezenas:
+        qtd_dezenas = min_dezenas
         st.info(f"🎯 Nesta loteria, a quantidade de dezenas é fixa: **{qtd_dezenas} dezenas**.")
     else:
         qtd_dezenas = st.slider(
             "🔢 Quantidade de dezenas por aposta",
-            min_value=config["total_bolas"],
-            max_value=config["universo"],
-            value=config["total_bolas"],
+            min_value=min_dezenas,
+            max_value=max_dezenas,
+            value=min_dezenas,
+            help=f"Desdobramento de {min_dezenas} a {max_dezenas} dezenas (conforme a tabela de preços).",
         )
 
 prob_single = win_probability(lottery_cfg, qtd_dezenas, qtd_apostas=1)

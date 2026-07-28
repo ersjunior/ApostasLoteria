@@ -575,7 +575,7 @@ Calcula probabilidades **matemáticas** (não empíricas), por modalidade.
 
 ### 11.6 `expected_value.py` — valor esperado e vantagem da casa
 
-- **`calculate_expected_value(config, qtd_dezenas, qtd_apostas)`** — `EV = P(prêmio) × prêmio_médio − custo`. Usa prêmios médios de referência (`_AVERAGE_MAIN_PRIZES`) para Mega-Sena, Lotofácil, Quina, Dupla Sena e Dia de Sorte. Quando não há dado de prêmio, retorna apenas probabilidade e custo (`has_prize_data=False`). Também calcula a **vantagem da casa** (`house_edge_pct`).
+- **`calculate_expected_value(config, qtd_dezenas, qtd_apostas)`** — `EV = P(prêmio) × prêmio_médio − custo`. Usa prêmios médios de referência (`_AVERAGE_MAIN_PRIZES`) para Mega-Sena, Lotofácil, Quina, Dupla Sena e Dia de Sorte. Quando não há dado de prêmio, retorna apenas probabilidade e custo (`has_prize_data=False`). Também calcula a **vantagem da casa** (`house_edge_pct`). Se `qtd_dezenas` não tiver preço na `price_table`, levanta `ValueError` descritivo (em vez de `KeyError`).
 
 Retorna `ExpectedValueResult` com custo, faixa principal (`PrizeTier`), retorno esperado, EV, vantagem da casa e uma nota explicativa. Os prêmios são **ordens de grandeza** — o valor real varia a cada concurso.
 
@@ -684,7 +684,7 @@ A página mais rica. Passo a passo do que o usuário vê, de cima para baixo:
 **Seção "🔬 Teste Qui-Quadrado de Uniformidade"** — texto explicativo sobre ruído amostral e falácia do apostador, três `metric_card` (χ², p-valor, graus de liberdade) e uma mensagem `success`/`warning` conforme o p-valor (≥ 0,05 = compatível com aleatoriedade).
 
 **Seção "🎲 Probabilidade Matemática"** — dois painéis:
-- **Entrada:** slider **"🎟️ Quantidade de apostas"** (1–100) e slider **"🔢 Quantidade de dezenas por aposta"** (de `total_bolas` a `universo`; fixo quando a modalidade não admite desdobramento).
+- **Entrada:** slider **"🎟️ Quantidade de apostas"** (1–100) e slider **"🔢 Quantidade de dezenas por aposta"** (do menor ao maior desdobramento **com preço definido na `price_table`**, limitado ao `universo`; fixo quando há um único valor de preço). Isso evita selecionar uma quantidade sem preço/probabilidade válida.
 - **Saída:** cards de probabilidade por aposta, probabilidade total, custo por aposta e custo total (formatados em BRL). Uma legenda mostra a fórmula e o total de combinações.
 
 **Seção "💸 Valor Esperado e Vantagem da Casa"** — três cards (probabilidade da faixa principal, custo da aposta, EV). Quando há prêmio médio de referência, detalha retorno esperado, vantagem da casa e um alerta de EV negativo; caso contrário, exibe nota informativa.

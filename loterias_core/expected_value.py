@@ -72,6 +72,13 @@ def calculate_expected_value(
     prob_result = win_probability(config, qtd_dezenas, qtd_apostas)
     tier_name, matches = _main_tier_name(config)
 
+    if qtd_dezenas not in config.price_table:
+        validos = ", ".join(str(k) for k in sorted(config.price_table))
+        raise ValueError(
+            f"Quantidade de dezenas ({qtd_dezenas}) sem preço definido para "
+            f"'{config.key}'. Valores válidos: {validos}."
+        )
+
     cost_per_bet = config.price_table[qtd_dezenas]
     total_cost = cost_per_bet * qtd_apostas
 
