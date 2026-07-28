@@ -29,9 +29,29 @@ source .venv/bin/activate
 
 ## Passo 2: Instalar dependências
 
+Instalação recomendada via `pyproject.toml` (dependências pinadas):
+
+```bash
+pip install -e ".[dev,api]"
+```
+
+Alternativa equivalente usando os arquivos legados:
+
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-api.txt   # se for usar a API
+pip install -e ".[dev]"             # ferramentas de dev (ruff, mypy, pytest-cov, pre-commit)
 ```
+
+### Pre-commit (recomendado)
+
+Com o ambiente ativo e `[dev]` instalado:
+
+```bash
+pre-commit install
+```
+
+Isso executa ruff, formatação, checagem de YAML e outros hooks antes de cada commit.
 
 ## Passo 3: Executar a aplicação Streamlit
 
@@ -81,6 +101,14 @@ Esses arquivos são ignorados pelo Git (`.gitignore`).
 A API é **independente** do Streamlit: não há chamadas HTTP entre eles. Ela opera hoje apenas com **Mega-Sena**, em formato **CSV** separado do fluxo XLSX da interface.
 
 ### Passo 1: Instalar dependências da API
+
+Se ainda não instalou tudo de uma vez:
+
+```bash
+pip install -e ".[api]"
+```
+
+Ou, via requirements legado:
 
 ```bash
 pip install -r requirements-api.txt
@@ -187,6 +215,13 @@ Com mais detalhes:
 pytest -v
 ```
 
+### Lint e formatação
+
+```bash
+ruff check .
+ruff format --check .
+```
+
 ---
 
 ## ❓ Solução de problemas
@@ -204,8 +239,7 @@ pytest -v
 **Solução:** ative `.venv`, instale dependências e execute os comandos a partir da **raiz** do projeto:
 
 ```bash
-pip install -r requirements.txt
-pip install -r requirements-api.txt   # se for usar a API
+pip install -e ".[dev,api]"
 ```
 
 ### Erro ao executar Streamlit (`app/main.py` não encontrado)

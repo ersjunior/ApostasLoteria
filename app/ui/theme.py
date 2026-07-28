@@ -1,4 +1,5 @@
 import streamlit as st
+
 from app.ui.theme_manager import get_theme
 
 # =========================
@@ -54,6 +55,7 @@ def section(title: str):
         unsafe_allow_html=True,
     )
 
+
 def metric_card(label: str, value: str, icon: str):
     theme = get_theme()
 
@@ -73,12 +75,13 @@ def metric_card(label: str, value: str, icon: str):
         unsafe_allow_html=True,
     )
 
+
 def game_card(
     title: str,
     numbers: list[int],
     status: str,
     accent_color="#2563eb",
-    background_color="rgba(255,255,255,0.05)"
+    background_color="rgba(255,255,255,0.05)",
 ):
     st.markdown(
         f"""
@@ -98,10 +101,11 @@ def game_card(
             </div>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-#def game_card(title: str, numbers: list[int], status: str):
+
+# def game_card(title: str, numbers: list[int], status: str):
 #    nums = " • ".join(f"{n:02d}" for n in numbers)
 #
 #    st.markdown(
@@ -121,6 +125,7 @@ def game_card(
 #        unsafe_allow_html=True,
 #    )
 
+
 def card(title: str, content: str):
     st.markdown(
         f"""
@@ -136,6 +141,7 @@ def card(title: str, content: str):
         """,
         unsafe_allow_html=True,
     )
+
 
 def status_message(message: str, status: str = "info"):
     colors = {
@@ -154,23 +160,6 @@ def status_message(message: str, status: str = "info"):
             background-color: {CARD_COLOR};
         ">
             {message}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-def metric_card(label: str, value: str, icon: str):
-    st.markdown(
-        f"""
-        <div style="
-            background-color:{CARD_COLOR};
-            padding:20px;
-            border-radius:12px;
-            text-align:center;
-        ">
-            <div style="font-size:28px">{icon}</div>
-            <div style="font-size:14px; color:#aaa">{label}</div>
-            <div style="font-size:24px; font-weight:bold">{value}</div>
         </div>
         """,
         unsafe_allow_html=True,

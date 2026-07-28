@@ -1,8 +1,4 @@
-def check_game(
-    dezenas: list[int],
-    df,
-    extra_values: dict | None = None
-) -> bool:
+def check_game(dezenas: list[int], df, extra_values: dict | None = None) -> bool:
     """
     Verifica se um jogo já foi sorteado.
     Suporta:

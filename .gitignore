@@ -37,6 +37,8 @@ env/
 .coverage
 htmlcov/
 *.cover
+.ruff_cache/
+.mypy_cache/
 
 # OS
 .DS_Store

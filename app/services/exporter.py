@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def export_csv(games, prefix="Bola"):
     """
     Exporta jogos para CSV de forma genérica

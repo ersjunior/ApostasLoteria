@@ -1,5 +1,7 @@
 import pandas as pd
-from app.services.statistics import frequency, empirical_probability
+
+from app.services.statistics import empirical_probability, frequency
+
 
 def mock_dataset():
     data = {
@@ -12,17 +14,19 @@ def mock_dataset():
     }
     return pd.DataFrame(data)
 
+
 def test_frequency_counts_correctly():
     df = mock_dataset()
-    freq = frequency(df)
+    freq = frequency(df, total_bolas=6)
 
     assert freq[1] == 2
     assert freq[6] == 2
     assert freq.sum() == 12  # 2 concursos * 6 dezenas
 
+
 def test_empirical_probability():
     df = mock_dataset()
-    prob = empirical_probability(df)
+    prob = empirical_probability(df, total_bolas=6)
 
     assert prob.min() >= 0
     assert round(prob.sum(), 5) == 1.0

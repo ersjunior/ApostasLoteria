@@ -1,7 +1,1 @@
-fastapi
-uvicorn[standard]
-pydantic
-pandas
-numpy
-scikit-learn
-requests
+-e .[api]

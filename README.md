@@ -160,13 +160,13 @@ Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo:
 |        ├── test_forecast.py
 |        ├── test_statistics.py
 |        └── test_validator.py
-├── pytest.ini
+├── pyproject.toml                  # Dependências e config (ruff, mypy, pytest)
 ├── docs/                           # Documentação complementar
 │        ├── ARCHITECTURE_NOTES.md
 │        ├── COMO_EXECUTAR.md
 │        └── README.md
-├── requirements.txt
-├── requirements-api.txt
+├── requirements.txt                # Atalho: pip install -e .
+├── requirements-api.txt            # Atalho: pip install -e .[api]
 └── README.md
 ```
 
@@ -247,14 +247,26 @@ python -m venv .venv
 # Linux/Mac
 source .venv/bin/activate
 
-# instalar dependências
-pip install -r requirements.txt
+# instalar dependências (app + API + ferramentas de dev)
+pip install -e ".[dev,api]"
+
+# hooks de qualidade (opcional, recomendado)
+pre-commit install
 
 # interface web
 streamlit run app/Home.py
 ```
 
-Para a API localmente, instale também `pip install -r requirements-api.txt` e execute `uvicorn api.main:app --reload` a partir da raiz do projeto. Detalhes adicionais em [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
+Para a API localmente, execute `uvicorn api.main:app --reload` a partir da raiz do projeto (requer o extra `api`, já incluído no comando acima). Detalhes adicionais em [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
+
+### Qualidade de código
+
+```bash
+ruff check .
+ruff format --check .
+pytest
+mypy app api   # modo gradual (ignore_missing_imports)
+```
 
 Mais documentação em [docs/](docs/README.md) (arquitetura, guias complementares).
 

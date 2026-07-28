@@ -7,20 +7,18 @@ if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
 import streamlit as st
+
 from app.core.lotteries import LOTTERIES
-from app.services.exporter import export_csv
-from app.services.dataset import load_dataset
 from app.ml.forecast import generate_forecast_games
-from app.ui.theme import page_title, section, game_card
-from app.ui.theme_manager import init_theme, apply_theme
+from app.services.dataset import load_dataset
+from app.services.exporter import export_csv
+from app.ui.theme import game_card, page_title, section
+from app.ui.theme_manager import apply_theme, init_theme
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
-st.set_page_config(
-    page_title="Forecast de Jogos",
-    layout="wide"
-)
+st.set_page_config(page_title="Forecast de Jogos", layout="wide")
 
 init_theme()
 apply_theme()
@@ -36,13 +34,11 @@ def pastel_color(hex_color: str, alpha=0.15):
     b = int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
+
 # =========================
 # TÍTULO
 # =========================
-page_title(
-    "🔮 Forecast de Jogos",
-    "Geração de combinações inéditas que nunca foram sorteadas"
-)
+page_title("🔮 Forecast de Jogos", "Geração de combinações inéditas que nunca foram sorteadas")
 
 # =========================
 # SELETOR DE LOTERIA
@@ -54,10 +50,7 @@ st.info(
     "e não representam garantia de prêmio."
 )
 
-lottery_name = st.selectbox(
-    "Escolha a loteria",
-    list(LOTTERIES.keys())
-)
+lottery_name = st.selectbox("Escolha a loteria", list(LOTTERIES.keys()))
 
 config = LOTTERIES[lottery_name]
 
@@ -66,15 +59,15 @@ st.markdown(
     <div style="
         margin-top:10px;
         padding:10px 15px;
-        border-left:5px solid {config['color']};
-        background-color:{pastel_color(config['color'])};
+        border-left:5px solid {config["color"]};
+        background-color:{pastel_color(config["color"])};
         border-radius:6px;
     ">
-        <strong>{config['icon']} {lottery_name}</strong><br>
-        Forecast com <b>{config['total_bolas']} dezenas</b>.
+        <strong>{config["icon"]} {lottery_name}</strong><br>
+        Forecast com <b>{config["total_bolas"]} dezenas</b>.
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 # =========================
@@ -86,12 +79,10 @@ try:
         total_bolas=config["total_bolas"],
         extra_fields=config.get("extra_fields"),
         multiple_draws=config.get("multiple_draws", False),
-        special_handler=config.get("special_handler")
+        special_handler=config.get("special_handler"),
     )
 except (FileNotFoundError, ValueError) as e:
-    st.error(
-        f"⚠️ Erro ao carregar a base da **{lottery_name}**\n\n{str(e)}"
-    )
+    st.error(f"⚠️ Erro ao carregar a base da **{lottery_name}**\n\n{str(e)}")
     st.stop()
 
 # =========================
@@ -107,7 +98,7 @@ if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
         n_games=10,
         universo=config["universo"],
         total_bolas=config["total_bolas"],
-        extra_fields=config.get("extra_fields")
+        extra_fields=config.get("extra_fields"),
     )
 
     section("📋 Jogos Gerados")
@@ -116,7 +107,7 @@ if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
     game_index = 0
 
     st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
-    for row in range((len(games) + COLS_PER_ROW - 1) // COLS_PER_ROW):
+    for _row in range((len(games) + COLS_PER_ROW - 1) // COLS_PER_ROW):
         cols = st.columns(COLS_PER_ROW)
 
         for col in cols:
@@ -127,7 +118,7 @@ if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
                         numbers=games[game_index]["dezenas"],
                         status="❌ Nunca sorteado",
                         accent_color=config["color"],
-                        background_color=pastel_color(config["color"])
+                        background_color=pastel_color(config["color"]),
                     )
                 game_index += 1
 
@@ -140,8 +131,5 @@ if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
 
     st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
     st.download_button(
-        "📄 Baixar jogos em CSV",
-        csv,
-        f"forecast_{config['key']}.csv",
-        mime="text/csv"
+        "📄 Baixar jogos em CSV", csv, f"forecast_{config['key']}.csv", mime="text/csv"
     )

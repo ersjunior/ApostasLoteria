@@ -6,19 +6,16 @@ root_dir = Path(__file__).parent.parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
-import streamlit as st
 import requests
+import streamlit as st
 
-from app.ui.theme import page_title, section, card
-from app.ui.theme_manager import init_theme, apply_theme
+from app.ui.theme import card, page_title, section
+from app.ui.theme_manager import apply_theme, init_theme
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
-st.set_page_config(
-    page_title="Feito por",
-    layout="wide"
-)
+st.set_page_config(page_title="Feito por", layout="wide")
 
 init_theme()
 apply_theme()
@@ -32,10 +29,7 @@ LINKEDIN_URL = "https://www.linkedin.com/in/eliezer-junior/"
 # =========================
 # TÍTULO
 # =========================
-page_title(
-    "👨‍💻 Feito por",
-    "Quem está por trás deste projeto"
-)
+page_title("👨‍💻 Feito por", "Quem está por trás deste projeto")
 
 # =========================
 # PERFIL
@@ -69,22 +63,14 @@ with col1:
         "🐙 GitHub",
         "Projetos, códigos e estudos técnicos",
     )
-    st.link_button(
-        "Acessar GitHub",
-        f"https://github.com/{GITHUB_USER}",
-        use_container_width=True
-    )
+    st.link_button("Acessar GitHub", f"https://github.com/{GITHUB_USER}", use_container_width=True)
 
 with col2:
     card(
         "💼 LinkedIn",
         "Experiência profissional e trajetória",
     )
-    st.link_button(
-        "Acessar LinkedIn",
-        LINKEDIN_URL,
-        use_container_width=True
-    )
+    st.link_button("Acessar LinkedIn", LINKEDIN_URL, use_container_width=True)
 
 # =========================
 # DADOS DO GITHUB (API)
@@ -93,10 +79,7 @@ section("📦 Atividade no GitHub")
 st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
 
 try:
-    response = requests.get(
-        f"https://api.github.com/users/{GITHUB_USER}",
-        timeout=5
-    )
+    response = requests.get(f"https://api.github.com/users/{GITHUB_USER}", timeout=5)
     response.raise_for_status()
     gh = response.json()
 
@@ -112,9 +95,7 @@ try:
         card("👥 Seguindo", str(gh.get("following", "—")))
 
 except Exception:
-    st.warning(
-        "Não foi possível carregar os dados do GitHub no momento."
-    )
+    st.warning("Não foi possível carregar os dados do GitHub no momento.")
 
 # =========================
 # EXPERIÊNCIA RESUMIDA
@@ -125,16 +106,16 @@ st.markdown(
     """
     **Principais áreas de atuação:**
 
-    - 🏦 **Financeiro / Bancos**  
+    - 🏦 **Financeiro / Bancos**
       Análises de dados, regras de negócio, produtos financeiros e cartões.
 
-    - 🛒 **Varejo & Logística**  
+    - 🛒 **Varejo & Logística**
       Engenharia de dados, pipelines, métricas operacionais e performance.
 
-    - 🌱 **Agronegócio**  
+    - 🌱 **Agronegócio**
       Estruturação de dados, analytics e suporte à decisão.
 
-    - 📊 **BI & Analytics**  
+    - 📊 **BI & Analytics**
       Power BI, DAX, modelagem dimensional e storytelling com dados.
     """
 )
@@ -146,12 +127,12 @@ section("⚙️ Stack Técnica")
 
 st.markdown(
     """
-    - **Linguagens:** Python, SQL  
-    - **Dados:** Pandas, NumPy, Spark  
-    - **Orquestração:** Airflow  
-    - **Cloud:** AWS, GCP  
-    - **BI:** Power BI, DAX  
-    - **Apps & Dashboards:** Streamlit  
+    - **Linguagens:** Python, SQL
+    - **Dados:** Pandas, NumPy, Spark
+    - **Orquestração:** Airflow
+    - **Cloud:** AWS, GCP
+    - **BI:** Power BI, DAX
+    - **Apps & Dashboards:** Streamlit
     """
 )
 

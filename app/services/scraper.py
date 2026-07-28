@@ -1,11 +1,11 @@
-import pandas as pd
-import requests
 from io import BytesIO
 
+import pandas as pd
+import requests
+
 # URL estática conhecida (pode falhar no futuro)
-STATIC_XLSX_URL = (
-    "https://loterias.caixa.gov.br/loterias/_arquivos/loterias/D_megasena.xlsx"
-)
+STATIC_XLSX_URL = "https://loterias.caixa.gov.br/loterias/_arquivos/loterias/D_megasena.xlsx"
+
 
 def download_megasena_data():
     """

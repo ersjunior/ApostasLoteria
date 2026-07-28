@@ -1,7 +1,4 @@
-from app.services.dataset import load_dataset
-
 LOTTERIES = {
-
     # =========================
     # MEGA-SENA
     # =========================
@@ -31,7 +28,6 @@ LOTTERIES = {
             20: 232560.00,
         },
     },
-
     # =========================
     # LOTOFÁCIL
     # =========================
@@ -52,7 +48,6 @@ LOTTERIES = {
             20: 46512.00,
         },
     },
-
     # =========================
     # QUINA
     # =========================
@@ -78,7 +73,6 @@ LOTTERIES = {
             15: 7507.50,
         },
     },
-
     # =========================
     # DUPLA SENA
     # =========================
@@ -90,7 +84,7 @@ LOTTERIES = {
         "universo": 50,
         "placeholder": "01, 02, 03, 04, 05, 06",
         "file_path": "app/data/Dupla Sena.xlsx",
-        "multiple_draws": True,   # 👈 NOVO
+        "multiple_draws": True,  # 👈 NOVO
         "price_table": {
             6: 2.50,
             7: 17.50,
@@ -104,7 +98,6 @@ LOTTERIES = {
             15: 12512.50,
         },
     },
-
     # =========================
     # LOTOMANIA
     # =========================
@@ -121,7 +114,6 @@ LOTTERIES = {
             50: 3.00,
         },
     },
-
     # =========================
     # DIA DE SORTE
     # =========================
@@ -145,7 +137,6 @@ LOTTERIES = {
             15: 16087.50,
         },
     },
-
     # =========================
     # TIMEMANIA
     # =========================
@@ -158,13 +149,12 @@ LOTTERIES = {
         "placeholder": "7 dezenas + Time do Coração",
         "file_path": "app/data/Timemania.xlsx",
         "extra_fields": {
-            "timecoração": 1        # 👈 campo especial
+            "timecoração": 1  # 👈 campo especial
         },
         "price_table": {
             7: 3.50,
         },
     },
-
     # =========================
     # SUPER SETE
     # =========================
@@ -189,7 +179,6 @@ LOTTERIES = {
             15: 16087.50,
         },
     },
-
     # =========================
     # +MILIONÁRIA
     # =========================
@@ -197,7 +186,7 @@ LOTTERIES = {
         "key": "mais_milionaria",
         "icon": "💎",
         "color": "#7c3aed",
-        "total_bolas": 6,     # dezenas principais
+        "total_bolas": 6,  # dezenas principais
         "universo": 50,
         "placeholder": "6 dezenas + 2 trevos",
         "file_path": "app/data/+Milionária.xlsx",

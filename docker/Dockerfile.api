@@ -7,11 +7,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
-COPY requirements.txt requirements-api.txt ./
-RUN pip install --no-cache-dir -r requirements.txt -r requirements-api.txt
-
-COPY api ./api
+COPY pyproject.toml requirements.txt requirements-api.txt ./
 COPY app ./app
+COPY api ./api
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-api.txt
 
 EXPOSE 8000
 

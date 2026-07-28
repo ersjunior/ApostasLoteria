@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from api.routes import verify, forecast, dataset
+
+from api.routes import dataset, forecast, verify
 
 app = FastAPI()
 

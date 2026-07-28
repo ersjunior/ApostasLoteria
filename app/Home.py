@@ -1,7 +1,8 @@
 import sys
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
-from pathlib import Path
 
 # Adicionar o diretório raiz ao Python path
 root_dir = Path(__file__).parent.parent
@@ -9,17 +10,14 @@ if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
 from app.core.lotteries import LOTTERIES
-from app.ui.theme import page_title, section, card
-from app.ui.theme_manager import init_theme, apply_theme
-from app.services.dataset import normalize_columns, enrich_dataset
+from app.services.dataset import enrich_dataset, normalize_columns
+from app.ui.theme import card, page_title, section
+from app.ui.theme_manager import apply_theme, init_theme
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
-st.set_page_config(
-    page_title="🍀 Loterias Analyzer",
-    layout="wide"
-)
+st.set_page_config(page_title="🍀 Loterias Analyzer", layout="wide")
 
 init_theme()
 apply_theme()
@@ -29,7 +27,7 @@ apply_theme()
 # =========================
 page_title(
     "🎰 Loterias Analyzer",
-    "Análise estatística, verificação de jogos e geração de combinações inéditas para loterias"
+    "Análise estatística, verificação de jogos e geração de combinações inéditas para loterias",
 )
 
 st.markdown(
@@ -39,7 +37,7 @@ st.markdown(
         baseada em dados oficiais, estatística descritiva e simulações matemáticas.
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 # =========================
@@ -53,25 +51,24 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     card(
         "🎯 Verificação de Jogos",
-        "Verifique múltiplos jogos simultaneamente e descubra se combinações já foram sorteadas."
+        "Verifique múltiplos jogos simultaneamente e descubra se combinações já foram sorteadas.",
     )
 
 with col2:
     card(
-        "🔮 Combinações Inéditas",
-        "Gere jogos aleatórios que nunca foram sorteados anteriormente."
+        "🔮 Combinações Inéditas", "Gere jogos aleatórios que nunca foram sorteados anteriormente."
     )
 
 with col3:
     card(
         "📊 Estatísticas Avançadas",
-        "Explore frequências, probabilidades empíricas e distribuição das dezenas."
+        "Explore frequências, probabilidades empíricas e distribuição das dezenas.",
     )
 
 with col4:
     card(
         "💰Custos e Probabilidades",
-        "Simule diferentes cenários de apostas, custos totais e probabilidades matemáticas reais."
+        "Simule diferentes cenários de apostas, custos totais e probabilidades matemáticas reais.",
     )
 
 # =========================
@@ -94,20 +91,20 @@ with c1:
     card(
         "Mega-Sena",
         "A mais popular loteria do Brasil, com análise completa de estatísticas, verificação "
-        "e geração de jogos inéditos."
+        "e geração de jogos inéditos.",
     )
 
 with c2:
     card(
         "Lotofácil",
         "Análises específicas para apostas com 15 a 20 dezenas, incluindo simulações de custo "
-        "e probabilidade."
+        "e probabilidade.",
     )
 
 with c3:
     card(
         "Extensível",
-        "Arquitetura preparada para inclusão de novas loterias, como Quina, Lotomania e outras."
+        "Arquitetura preparada para inclusão de novas loterias, como Quina, Lotomania e outras.",
     )
 
 # =========================
@@ -117,16 +114,16 @@ section("🧭 Como utilizar a aplicação")
 
 st.markdown(
     """
-    ### 1️⃣ Obtenha a base de dados oficial  
+    ### 1️⃣ Obtenha a base de dados oficial
     Baixe o arquivo **XLSX oficial** da loteria desejada diretamente do site da Caixa Econômica Federal.
 
-    ### 2️⃣ Faça o upload dos arquivos  
+    ### 2️⃣ Faça o upload dos arquivos
     Utilize o painel lateral para enviar os arquivos baixado ao sistema.
 
-    ### 3️⃣ Selecione a loteria  
+    ### 3️⃣ Selecione a loteria
     Nas páginas de **Verificação**, **Forecast** e **Estatísticas**, escolha a modalidade desejada.
 
-    ### 4️⃣ Explore as funcionalidades  
+    ### 4️⃣ Explore as funcionalidades
     Analise dados históricos, gere jogos inéditos e simule cenários de apostas.
     """
 )
@@ -153,8 +150,8 @@ st.markdown(
 # =========================
 st.info(
     """
-    ⚠️ **Aviso importante**  
-    Este sistema possui finalidade **educacional e analítica**.  
+    ⚠️ **Aviso importante**
+    Este sistema possui finalidade **educacional e analítica**.
     Jogos de loteria são eventos **aleatórios**, e análises estatísticas **não garantem prêmios**.
     """
 )
@@ -168,7 +165,7 @@ st.sidebar.markdown("## 📤 Upload Manual do XLSX")
 loteria_upload = st.sidebar.selectbox(
     "🎰 Loteria do arquivo",
     list(LOTTERIES.keys()),
-    help="Selecione a loteria correspondente ao arquivo XLSX"
+    help="Selecione a loteria correspondente ao arquivo XLSX",
 )
 
 st.sidebar.markdown(
@@ -184,13 +181,11 @@ st.sidebar.markdown(
         Informe corretamente a loteria correspondente.
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 uploaded_file = st.sidebar.file_uploader(
-    "📄 Envie o arquivo XLSX",
-    type=["xlsx"],
-    help="Arquivo oficial baixado do site da Caixa"
+    "📄 Envie o arquivo XLSX", type=["xlsx"], help="Arquivo oficial baixado do site da Caixa"
 )
 
 if uploaded_file is not None:
@@ -204,14 +199,10 @@ if uploaded_file is not None:
         df.to_excel(config["file_path"], index=False)
         st.cache_data.clear()
 
-        st.sidebar.success(
-            f"✅ Base da **{loteria_upload}** carregada com sucesso!"
-        )
+        st.sidebar.success(f"✅ Base da **{loteria_upload}** carregada com sucesso!")
 
     except Exception as e:
-        st.sidebar.error(
-            f"❌ Erro ao processar o arquivo: {str(e)}"
-        )
+        st.sidebar.error(f"❌ Erro ao processar o arquivo: {str(e)}")
 
 # =========================
 # SIDEBAR — BASE DE DADOS
@@ -231,13 +222,11 @@ st.sidebar.markdown(
         diretamente do site da Caixa Econômica Federal.
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 st.sidebar.link_button(
-    "⬇️ Baixar base atualizada",
-    "https://loterias.caixa.gov.br/",
-    use_container_width=True
+    "⬇️ Baixar base atualizada", "https://loterias.caixa.gov.br/", use_container_width=True
 )
 
 st.sidebar.caption(
@@ -255,7 +244,7 @@ items = list(LOTTERIES.items())
 for i in range(0, len(items), COLS_PER_ROW):
     cols = st.columns(COLS_PER_ROW)
 
-    for col, (name, cfg) in zip(cols, items[i:i + COLS_PER_ROW]):
+    for col, (name, cfg) in zip(cols, items[i : i + COLS_PER_ROW], strict=False):
         with col:
             if Path(cfg["file_path"]).exists():
                 st.success(f"✅ {name}")

@@ -1,6 +1,7 @@
 import sys
-import streamlit as st
 from pathlib import Path
+
+import streamlit as st
 
 # Adicionar o diretório raiz ao Python path
 root_dir = Path(__file__).parent.parent.parent
@@ -8,18 +9,15 @@ if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
 from app.core.lotteries import LOTTERIES
-from app.ui.theme import page_title, section
 from app.services.dataset import load_dataset
 from app.services.validator import check_game
-from app.ui.theme_manager import init_theme, apply_theme
+from app.ui.theme import page_title, section
+from app.ui.theme_manager import apply_theme, init_theme
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
-st.set_page_config(
-    page_title="Verificação de Jogos",
-    layout="wide"
-)
+st.set_page_config(page_title="Verificação de Jogos", layout="wide")
 
 init_theme()
 apply_theme()
@@ -29,8 +27,7 @@ apply_theme()
 # TÍTULO
 # =========================
 page_title(
-    "🎯 Verificação de Jogos",
-    "Confira se seus jogos já foram sorteados em diferentes loterias"
+    "🎯 Verificação de Jogos", "Confira se seus jogos já foram sorteados em diferentes loterias"
 )
 
 # =========================
@@ -38,10 +35,7 @@ page_title(
 # =========================
 section("🎲 Seleção da Loteria")
 
-lottery_name = st.selectbox(
-    "Escolha a loteria",
-    list(LOTTERIES.keys())
-)
+lottery_name = st.selectbox("Escolha a loteria", list(LOTTERIES.keys()))
 
 config = LOTTERIES[lottery_name]
 
@@ -50,15 +44,15 @@ st.markdown(
     <div style="
         margin-top:10px;
         padding:10px 15px;
-        border-left:5px solid {config['color']};
+        border-left:5px solid {config["color"]};
         background-color: rgba(255,255,255,0.02);
         border-radius:6px;
     ">
-        <strong>{config['icon']} {lottery_name}</strong><br>
-        Insira jogos com <b>{config['total_bolas']} dezenas</b>.
+        <strong>{config["icon"]} {lottery_name}</strong><br>
+        Insira jogos com <b>{config["total_bolas"]} dezenas</b>.
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 # =========================
@@ -70,40 +64,38 @@ try:
         total_bolas=config["total_bolas"],
         extra_fields=config.get("extra_fields"),
         multiple_draws=config.get("multiple_draws", False),
-        special_handler=config.get("special_handler")
+        special_handler=config.get("special_handler"),
     )
 except (FileNotFoundError, ValueError) as e:
     st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
-    st.error(
-        f"⚠️ Erro ao carregar a base da **{lottery_name}**\n\n{str(e)}"
-    )
+    st.error(f"⚠️ Erro ao carregar a base da **{lottery_name}**\n\n{str(e)}")
     st.write("DEBUG special_handler:", config.get("special_handler"))
     st.stop()
 
 # =========================
 # DEBUG — VALIDAÇÃO DO DATASET
 # =========================
-#st.subheader("🧪 Debug do Dataset (temporário)")
+# st.subheader("🧪 Debug do Dataset (temporário)")
 #
-#st.write(type(df))
-#st.write(df.head())
-#st.write("Total de jogos:", len(df))
+# st.write(type(df))
+# st.write(df.head())
+# st.write("Total de jogos:", len(df))
 #
-#st.write("Total de jogos carregados:", len(df))
-#st.write("Colunas do DataFrame:", df.columns.tolist())
+# st.write("Total de jogos carregados:", len(df))
+# st.write("Colunas do DataFrame:", df.columns.tolist())
 #
 ## Mostrar alguns jogos reais
-#st.write("Exemplo de jogos reais do dataset:")
-#st.write(df["jogo"].head(10))
+# st.write("Exemplo de jogos reais do dataset:")
+# st.write(df["jogo"].head(10))
 #
 ## Teste manual de um jogo específico
-#test_game = [6, 29, 33, 38, 53, 56]
-#test_game = sorted(test_game)
+# test_game = [6, 29, 33, 38, 53, 56]
+# test_game = sorted(test_game)
 #
-#matches = df[df["jogo"].apply(lambda x: x == test_game)]
+# matches = df[df["jogo"].apply(lambda x: x == test_game)]
 #
-#st.write("Teste manual do jogo:", test_game)
-#st.write("Ocorrências encontradas:", len(matches))
+# st.write("Teste manual do jogo:", test_game)
+# st.write("Ocorrências encontradas:", len(matches))
 
 
 # =========================
@@ -136,10 +128,9 @@ for _ in range(TOTAL_GAMES // COLS_PER_ROW):
         dezenas_input = col.text_input(
             f"{config['icon']} Jogo {jogo_numero}",
             placeholder=config.get(
-                "placeholder",
-                f"Informe {config['total_bolas']} dezenas separadas por vírgula"
+                "placeholder", f"Informe {config['total_bolas']} dezenas separadas por vírgula"
             ),
-            key=f"{config['key']}_game_{game_index}"
+            key=f"{config['key']}_game_{game_index}",
         )
 
         extras_inputs = {}
@@ -152,26 +143,26 @@ for _ in range(TOTAL_GAMES // COLS_PER_ROW):
                 extra = col.text_input(
                     f"{config['icon']} {field.capitalize()} ({qtd})",
                     placeholder=f"{qtd} números separados por vírgula",
-                    key=f"{config['key']}_{field}_{game_index}"
+                    key=f"{config['key']}_{field}_{game_index}",
                 )
 
                 if extra:
-                    extras_inputs[field] = [
-                        int(x.strip()) for x in extra.split(",")
-                    ]
+                    extras_inputs[field] = [int(x.strip()) for x in extra.split(",")]
 
         # =========================
         # SALVAR JOGO
         # =========================
         if dezenas_input:
-            games.append({
-                "index": jogo_numero,
-                "dezenas": dezenas_input,
-                "extras": extras_inputs if extras_inputs else None
-            })
+            games.append(
+                {
+                    "index": jogo_numero,
+                    "dezenas": dezenas_input,
+                    "extras": extras_inputs if extras_inputs else None,
+                }
+            )
 
         game_index += 1
-        
+
 
 # =========================
 # VERIFICAÇÃO
@@ -204,39 +195,24 @@ if st.button(f"{config['icon']} Verificar Jogos"):
             dezenas = sorted(dezenas)
 
             if len(dezenas) != config["total_bolas"]:
-                results.append((
-                    "error",
-                    f"{config['icon']} Jogo {idx}",
-                    f"Informe exatamente {config['total_bolas']} dezenas"
-                ))
+                results.append(
+                    (
+                        "error",
+                        f"{config['icon']} Jogo {idx}",
+                        f"Informe exatamente {config['total_bolas']} dezenas",
+                    )
+                )
                 continue
 
-            found = check_game(
-                dezenas,
-                df,
-                extra_values=game["extras"]
-            )
+            found = check_game(dezenas, df, extra_values=game["extras"])
 
             if found:
-                results.append((
-                    "success",
-                    f"{config['icon']} Jogo {idx}",
-                    "Já foi sorteado 🎉"
-                ))
+                results.append(("success", f"{config['icon']} Jogo {idx}", "Já foi sorteado 🎉"))
             else:
-                results.append((
-                    "warning",
-                    f"{config['icon']} Jogo {idx}",
-                    "Nunca foi sorteado 🔍"
-                ))
+                results.append(("warning", f"{config['icon']} Jogo {idx}", "Nunca foi sorteado 🔍"))
 
         except ValueError:
-            results.append((
-                "error",
-                f"{config['icon']} Jogo {idx}",
-                "Formato inválido"
-            ))
-    
+            results.append(("error", f"{config['icon']} Jogo {idx}", "Formato inválido"))
 
     # =========================
     # RENDERIZAÇÃO EM GRID
@@ -244,7 +220,7 @@ if st.button(f"{config['icon']} Verificar Jogos"):
     for i in range(0, len(results), RESULTS_PER_ROW):
         cols = st.columns(RESULTS_PER_ROW)
 
-        for col, result in zip(cols, results[i:i + RESULTS_PER_ROW]):
+        for col, result in zip(cols, results[i : i + RESULTS_PER_ROW], strict=False):
             status, title, message = result
 
             with col:

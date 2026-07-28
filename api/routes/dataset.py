@@ -4,6 +4,7 @@ from api.services.core import load_dataset, update_dataset
 
 router = APIRouter()
 
+
 @router.get("/")
 def get_dataset_info():
     """
@@ -14,15 +15,16 @@ def get_dataset_info():
         return {
             "total_records": len(df),
             "columns": list(df.columns),
-            "last_update": "Verificar arquivo CSV para data de última atualização"
+            "last_update": "Verificar arquivo CSV para data de última atualização",
         }
     except FileNotFoundError:
         raise HTTPException(
             status_code=404,
-            detail="Dataset não encontrado. Use POST /dataset para criar/atualizar."
-        )
+            detail="Dataset não encontrado. Use POST /dataset para criar/atualizar.",
+        ) from None
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao carregar dataset: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao carregar dataset: {str(e)}") from e
+
 
 @router.post("/")
 def update_dataset_endpoint():
@@ -34,7 +36,7 @@ def update_dataset_endpoint():
         return {
             "message": "Dataset atualizado com sucesso",
             "total_records": len(df),
-            "columns": list(df.columns)
+            "columns": list(df.columns),
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao atualizar dataset: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar dataset: {str(e)}") from e
