@@ -330,9 +330,7 @@ def persist_dataset(
         atomic_write_excel(processed, file_path)
     except Exception as exc:
         raise DatasetSchemaError(
-            f"Falha ao gravar a base de **{name}**.\n\n"
-            f"{exc}\n\n"
-            "O dataset anterior foi preservado."
+            f"Falha ao gravar a base de **{name}**.\n\n{exc}\n\nO dataset anterior foi preservado."
         ) from exc
 
     return processed

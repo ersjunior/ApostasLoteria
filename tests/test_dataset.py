@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -167,7 +166,6 @@ def test_update_dataset_persists_csv(mock_download, megasena_fixture, tmp_path, 
 @patch("api.services.core.download_lottery_data")
 def test_update_dataset_scraper_error(mock_download, tmp_path, monkeypatch):
     import api.services.core as core
-
     from loterias_core.scraper import ScraperError
 
     mock_download.side_effect = ScraperError("falha simulada")

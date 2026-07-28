@@ -17,7 +17,7 @@ def test_load_dataset_cached_delegates_to_loader():
 
 def test_app_dataset_load_internal_bypasses_cache(megasena_fixture):
     with patch("app.services.dataset.st") as mock_st:
-        mock_st.cache_data = lambda **kwargs: (lambda fn: fn)
+        mock_st.cache_data = lambda **kwargs: lambda fn: fn
         from app.services.dataset import load_dataset_internal
 
         df = load_dataset_internal(str(megasena_fixture), total_bolas=6)

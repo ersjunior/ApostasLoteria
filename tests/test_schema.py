@@ -1,7 +1,5 @@
 """Testes de validação de schema e persistência atômica de datasets."""
 
-from io import BytesIO
-from pathlib import Path
 from unittest.mock import patch
 
 import pandas as pd
@@ -10,7 +8,6 @@ import pytest
 from loterias_core.dataset import atomic_write_excel, normalize_columns, persist_dataset
 from loterias_core.lotteries import LOTTERIES_BY_KEY
 from loterias_core.schema import DatasetSchemaError, validate_dataset_schema
-
 
 MEGASENA_CONFIG = LOTTERIES_BY_KEY["megasena"].to_dict()
 

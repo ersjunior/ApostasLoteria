@@ -227,9 +227,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
     ),
 )
 
-LOTTERIES: dict[str, dict[str, Any]] = {
-    cfg.name: cfg.to_dict() for cfg in LOTTERY_CONFIGS
-}
+LOTTERIES: dict[str, dict[str, Any]] = {cfg.name: cfg.to_dict() for cfg in LOTTERY_CONFIGS}
 
 # Índice auxiliar por chave interna (ex: "megasena")
 LOTTERIES_BY_KEY: dict[str, LotteryConfig] = {cfg.key: cfg for cfg in LOTTERY_CONFIGS}

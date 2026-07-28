@@ -10,13 +10,13 @@ from pathlib import Path
 
 import pandas as pd
 
-logger = logging.getLogger(__name__)
-
 from loterias_core.generator import generate_unique_combinations
 from loterias_core.lotteries import LOTTERIES_BY_KEY
 from loterias_core.schema import DatasetSchemaError
 from loterias_core.scraper import DataSource, ScraperError, download_lottery_data
 from loterias_core.validator import check_game
+
+logger = logging.getLogger(__name__)
 
 DATASET_PATH = "app/data/megasena.csv"
 MEGASENA_CONFIG = LOTTERIES_BY_KEY["megasena"].to_dict()
@@ -88,9 +88,7 @@ def update_dataset(source: DataSource | str = DataSource.AUTO):
     dezenas = [f"bola{i}" for i in range(1, 7)]
     missing = [c for c in dezenas if c not in df.columns]
     if missing:
-        raise DatasetSchemaError(
-            f"Base baixada sem colunas esperadas da Mega-Sena: {missing}"
-        )
+        raise DatasetSchemaError(f"Base baixada sem colunas esperadas da Mega-Sena: {missing}")
 
     df["jogo"] = df[dezenas].apply(
         lambda row: sorted(int(v) for v in row.tolist() if str(v).strip().isdigit()),

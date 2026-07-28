@@ -21,13 +21,13 @@ from loterias_core.dataset import (
 from loterias_core.expected_value import calculate_expected_value
 from loterias_core.generator import generate_unique_combinations
 from loterias_core.lotteries import LOTTERIES, LOTTERY_CONFIGS, LotteryConfig
+from loterias_core.schema import DatasetSchemaError, validate_dataset_schema
 from loterias_core.scraper import (
     DataSource,
     ScraperError,
     download_lottery_data,
     download_megasena_data,
 )
-from loterias_core.schema import DatasetSchemaError, validate_dataset_schema
 from loterias_core.statistics import (
     ChiSquareResult,
     chi_square_uniformity_test,
@@ -61,6 +61,7 @@ __all__ = [
     "handle_mais_milionaria",
     "handle_supersete",
     "load_dataset",
+    "normalize_columns",
     "persist_dataset",
     "process_raw_dataset",
     "save_dataset",

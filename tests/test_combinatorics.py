@@ -10,8 +10,8 @@ from loterias_core.combinatorics import (
 from loterias_core.lotteries import LOTTERIES_BY_KEY
 from loterias_core.statistics import chi_square_uniformity_test, frequency
 
-
 # --- C(n,k) por modalidade ---
+
 
 @pytest.mark.parametrize(
     ("key", "n", "k", "expected"),
@@ -48,6 +48,7 @@ def test_lotomania_total_combinations():
 
 
 # --- Probabilidade da faixa principal ---
+
 
 def test_megasena_main_probability():
     cfg = LOTTERIES_BY_KEY["megasena"]
@@ -95,6 +96,7 @@ def test_lotomania_main_probability():
 
 # --- Qui-quadrado em dados sintéticos ---
 
+
 def _uniform_freq(universo: int, draws: int, balls_per_draw: int) -> pd.Series:
     """Frequências perfeitamente uniformes."""
     per_dezena = (draws * balls_per_draw) // universo
@@ -125,10 +127,18 @@ def test_chi_square_biased_data_rejected():
 def test_chi_square_from_frequency_helper():
     """Integração com frequency() em dataset sintético uniforme."""
     rows = []
-    for draw in range(200):
+    for _draw in range(200):
         for bola in range(1, 7):
-            rows.append({"bola1": bola, "bola2": bola + 1, "bola3": bola + 2,
-                         "bola4": bola + 3, "bola5": bola + 4, "bola6": bola + 5})
+            rows.append(
+                {
+                    "bola1": bola,
+                    "bola2": bola + 1,
+                    "bola3": bola + 2,
+                    "bola4": bola + 3,
+                    "bola5": bola + 4,
+                    "bola6": bola + 5,
+                }
+            )
     df = pd.DataFrame(rows)
     freq = frequency(df, total_bolas=6)
     # Dataset pequeno e repetitivo — apenas verifica que roda sem erro

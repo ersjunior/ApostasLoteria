@@ -119,7 +119,9 @@ def win_probability(
         )
     else:
         prob = covered / total
-        formula = f"C({qtd_dezenas},{config.total_bolas}) / C({config.universo},{config.total_bolas})"
+        formula = (
+            f"C({qtd_dezenas},{config.total_bolas}) / C({config.universo},{config.total_bolas})"
+        )
 
     if qtd_apostas > 1:
         prob = 1 - (1 - prob) ** qtd_apostas

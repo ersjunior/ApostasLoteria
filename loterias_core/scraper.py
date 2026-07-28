@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from enum import Enum
+from enum import StrEnum
 from io import BytesIO
 from typing import Any
 
@@ -21,16 +21,14 @@ DEFAULT_MAX_RETRIES = 3
 DEFAULT_BACKOFF_BASE = 1.5
 
 STATIC_XLSX_BASE = "https://loterias.caixa.gov.br/loterias/_arquivos/loterias"
-PORTAL_XLSX_URL = (
-    "https://servicebus2.caixa.gov.br/portaldeloterias/api/resultados/download"
-)
+PORTAL_XLSX_URL = "https://servicebus2.caixa.gov.br/portaldeloterias/api/resultados/download"
 PORTAL_JSON_BASE = "https://servicebus2.caixa.gov.br/portaldeloterias/api"
 
 # URL legada — mantida para compatibilidade
 STATIC_XLSX_URL = f"{STATIC_XLSX_BASE}/D_megasena.xlsx"
 
 
-class DataSource(str, Enum):
+class DataSource(StrEnum):
     """Fonte de dados configurável, com fallback automático entre opções."""
 
     AUTO = "auto"

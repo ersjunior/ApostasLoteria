@@ -155,7 +155,9 @@ if not freq.empty:
 # =========================
 section("🎲 Probabilidade Matemática")
 
-st.markdown("Cálculo baseado em **combinatória C(n,k)** por modalidade — não em frequência histórica.")
+st.markdown(
+    "Cálculo baseado em **combinatória C(n,k)** por modalidade — não em frequência histórica."
+)
 
 col_input, col_output = st.columns([1, 1])
 
@@ -281,7 +283,9 @@ if top_n > 0:
     col_left, col_right = st.columns(2)
 
     with col_left:
-        fig_top = go.Figure(data=[go.Pie(labels=top.index.astype(str), values=top.values, hole=0.5)])
+        fig_top = go.Figure(
+            data=[go.Pie(labels=top.index.astype(str), values=top.values, hole=0.5)]
+        )
         fig_top.update_layout(title=f"🔥 Top {top_n} Mais Sorteadas — {lottery_name}", height=400)
         st.plotly_chart(fig_top, use_container_width=True)
 

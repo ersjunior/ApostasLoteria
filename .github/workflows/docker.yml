@@ -1,0 +1,30 @@
+name: Docker
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: api
+            file: docker/Dockerfile.api
+          - name: streamlit
+            file: docker/Dockerfile.streamlit
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.image.name }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image.file }}
+          push: false
+          tags: apostas-loteria-${{ matrix.image.name }}:ci

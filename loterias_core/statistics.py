@@ -26,7 +26,7 @@ def _gammaincc(a: float, x: float) -> float:
         ap = a
         summ = 1.0 / a
         del_ = summ
-        for n in range(1, 200):
+        for _n in range(1, 200):
             ap += 1.0
             del_ *= x / ap
             summ += del_

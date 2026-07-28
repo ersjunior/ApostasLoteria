@@ -21,9 +21,12 @@ from tests.fixtures.factory import megasena_xlsx_bytes
 
 def test_request_with_retry_succeeds_after_transient_failure():
     responses = [
-        MagicMock(status_code=503, raise_for_status=MagicMock(
-            side_effect=requests.HTTPError(response=MagicMock(status_code=503))
-        )),
+        MagicMock(
+            status_code=503,
+            raise_for_status=MagicMock(
+                side_effect=requests.HTTPError(response=MagicMock(status_code=503))
+            ),
+        ),
         MagicMock(status_code=200, raise_for_status=MagicMock(return_value=None)),
     ]
 
@@ -61,7 +64,9 @@ def test_request_with_retry_recovers_from_timeout():
         side_effect=[requests.Timeout("timeout"), ok],
     ):
         with patch("loterias_core.scraper.time.sleep"):
-            response = _request_with_retry("https://example.com/timeout", max_retries=2, backoff_base=0.01)
+            response = _request_with_retry(
+                "https://example.com/timeout", max_retries=2, backoff_base=0.01
+            )
 
     assert response.status_code == 200
 
@@ -70,14 +75,14 @@ def test_request_with_retry_recovers_from_connection_error():
     ok = MagicMock(status_code=200)
     ok.raise_for_status = MagicMock(return_value=None)
 
-    with patch(
-        "loterias_core.scraper.requests.get",
-        side_effect=[requests.ConnectionError("offline"), ok],
+    with (
+        patch(
+            "loterias_core.scraper.requests.get",
+            side_effect=[requests.ConnectionError("offline"), ok],
+        ),
+        patch("loterias_core.scraper.time.sleep"),
     ):
-        with patch("loterias_core.scraper.time.sleep"):
-            response = _request_with_retry(
-                "https://example.com/conn", max_retries=2, backoff_base=0.01
-            )
+        response = _request_with_retry("https://example.com/conn", max_retries=2, backoff_base=0.01)
 
     assert response.status_code == 200
 
@@ -165,7 +170,11 @@ def test_download_lottery_data_unknown_key():
 
 def test_json_row_to_record_megasena():
     config = LOTTERIES_BY_KEY["megasena"]
-    data = {"numero": 1, "dataApuracao": "2020-01-01", "listaDezenas": ["01", "02", "03", "04", "05", "06"]}
+    data = {
+        "numero": 1,
+        "dataApuracao": "2020-01-01",
+        "listaDezenas": ["01", "02", "03", "04", "05", "06"],
+    }
     record = _json_row_to_record(data, config)
     assert record["concurso"] == 1
     assert record["bola1"] == 1
@@ -202,7 +211,10 @@ def test_download_json_portal_builds_dataframe():
 
     concurso_mock = _concurso_json()
 
-    with patch("loterias_core.scraper._request_with_retry", side_effect=[latest, concurso_mock, concurso_mock]):
+    with patch(
+        "loterias_core.scraper._request_with_retry",
+        side_effect=[latest, concurso_mock, concurso_mock],
+    ):
         from loterias_core.scraper import _download_json_portal
 
         df = _download_json_portal(config, max_retries=1, backoff_base=0.01, timeout=5)
@@ -223,4 +235,3 @@ def test_download_megasena_data_legacy_alias():
             df = download_megasena_data(source=DataSource.XLSX_STATIC, max_retries=1)
 
     assert len(df) == 2
-

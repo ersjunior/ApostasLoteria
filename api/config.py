@@ -13,7 +13,7 @@ def _parse_origins(raw: str | None) -> list[str]:
 
 
 @lru_cache
-def get_settings() -> "Settings":
+def get_settings() -> Settings:
     return Settings()
 
 

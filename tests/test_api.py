@@ -158,7 +158,9 @@ def test_get_dataset_success(client, sample_dataset):
 
 
 @patch("api.routes.dataset.update_dataset")
-def test_post_dataset_updates_with_mocked_scrape(mock_update, client, sample_dataset, megasena_fixture):
+def test_post_dataset_updates_with_mocked_scrape(
+    mock_update, client, sample_dataset, megasena_fixture
+):
     raw = pd.read_excel(megasena_fixture)
     mock_update.return_value = raw.assign(
         jogo=raw.apply(
@@ -207,4 +209,3 @@ def test_rate_limit_forecast(mock_generate, mock_load, client, sample_dataset):
     assert responses[1].status_code == 200
     assert responses[2].status_code == 429
     assert responses[2].json()["code"] == "RATE_LIMIT_EXCEEDED"
-

@@ -1,6 +1,7 @@
 
 # 🎰 Loterias Analyzer
 
+![CI](https://github.com/ersjunior/ApostasLoteria/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red)
 ![Status](https://img.shields.io/badge/Status-Ativo-success)
