@@ -1,6 +1,6 @@
 import pandas as pd
 
-from app.services.validator import check_game
+from loterias_core.validator import check_game
 
 
 def test_game():

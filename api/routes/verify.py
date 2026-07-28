@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from api.services.core import load_dataset
-from app.services.validator import check_game
+from loterias_core.validator import check_game
 
 router = APIRouter()
 

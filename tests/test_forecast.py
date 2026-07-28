@@ -1,6 +1,6 @@
 import pandas as pd
 
-from app.ml.forecast import generate_forecast_games
+from loterias_core.generator import generate_forecast_games
 
 
 def mock_dataset():

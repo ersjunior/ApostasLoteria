@@ -10,6 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY pyproject.toml requirements.txt requirements-api.txt ./
 COPY app ./app
 COPY api ./api
+COPY loterias_core ./loterias_core
 RUN pip install --no-cache-dir -r requirements.txt -r requirements-api.txt
 
 EXPOSE 8000

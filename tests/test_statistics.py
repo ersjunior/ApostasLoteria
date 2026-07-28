@@ -1,6 +1,6 @@
 import pandas as pd
 
-from app.services.statistics import empirical_probability, frequency
+from loterias_core.statistics import empirical_probability, frequency
 
 
 def mock_dataset():

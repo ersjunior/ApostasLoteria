@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 
 from api.services.core import load_dataset
-from app.ml.forecast import generate_forecast_games
+from loterias_core.generator import generate_forecast_games
 
 router = APIRouter()
 
