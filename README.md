@@ -125,10 +125,10 @@ Guia completo: [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
 ├── docker/                     # Dockerfile.api · Dockerfile.streamlit · entrypoint.sh
 ├── docs/                       # COMO_EXECUTAR · ARCHITECTURE_NOTES
 ├── scripts/smoke_api.py
-├── tests/                      # fixtures + cobertura de domínio/API/UI services
+├── tests/                      # fixtures geradas (factory.py) + cobertura de domínio/API/UI services
 ├── docker-compose.yml
 ├── pyproject.toml
-└── requirements*.txt           # Atalhos: -e . / .[api] / .[dev]
+└── requirements*.txt           # Atalhos: -e . / .[api] / .[dev] (dev inclui api)
 ```
 
 Arquitetura detalhada: [docs/ARCHITECTURE_NOTES.md](docs/ARCHITECTURE_NOTES.md).
@@ -191,7 +191,7 @@ docker compose up --build api         # só API
 ```bash
 python -m venv .venv
 # Windows: .venv\Scripts\activate  ·  Linux/macOS: source .venv/bin/activate
-pip install -e ".[dev,api]"
+pip install -e ".[dev]"               # dev inclui a API (fastapi, httpx, …)
 cp .env.example .env                  # opcional
 pre-commit install                    # opcional
 streamlit run app/Home.py

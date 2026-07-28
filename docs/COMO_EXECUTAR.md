@@ -32,16 +32,18 @@ source .venv/bin/activate
 Instalação recomendada via `pyproject.toml` (dependências pinadas):
 
 ```bash
-pip install -e ".[dev,api]"
+pip install -e ".[dev]"
 ```
+
+O extra `[dev]` **inclui o extra `[api]`** (fastapi, uvicorn, httpx, …), então esse comando único já habilita a UI, a API e a suíte de testes completa (incluindo `tests/test_api.py`, que usa o `TestClient`/`httpx`). Se quiser apenas a API em produção, sem ferramentas de dev, use `pip install -e ".[api]"`.
 
 Alternativa equivalente usando os arquivos legados:
 
 ```bash
-pip install -r requirements.txt
-pip install -r requirements-api.txt   # se for usar a API
-pip install -r requirements-dev.txt   # pytest, pytest-cov, ruff, mypy, pre-commit
+pip install -r requirements-dev.txt   # pytest, ruff, mypy, pre-commit + API (fastapi, httpx, …)
 ```
+
+Para instalações mínimas específicas: `requirements.txt` (só o núcleo/UI) e `requirements-api.txt` (núcleo + API).
 
 ### Pre-commit (recomendado)
 
@@ -292,7 +294,7 @@ ruff format --check .
 **Solução:** ative `.venv`, instale dependências e execute os comandos a partir da **raiz** do projeto:
 
 ```bash
-pip install -e ".[dev,api]"
+pip install -e ".[dev]"
 ```
 
 ### Erro: `pytest: error: unrecognized arguments: --cov` / falta `pytest-cov`
@@ -305,6 +307,16 @@ pytest --cov --cov-report=term-missing
 ```
 
 Confirme que o venv é `.venv` (não confunda com o arquivo `.env` de secrets).
+
+### Erro: `pytest` falha na coleta de `test_api.py` (falta `httpx`/`fastapi`)
+
+**Sintoma:** ao rodar `pytest`, a coleta de `tests/test_api.py` falha com `ModuleNotFoundError: No module named 'httpx'` (ou `fastapi`). Ocorre quando o ambiente tem apenas o núcleo instalado, sem as dependências da API.
+
+**Solução:** instale o extra de desenvolvimento — ele **já inclui** o extra `[api]` (fastapi, httpx, …):
+
+```bash
+pip install -e ".[dev]"   # ou: pip install -r requirements-dev.txt
+```
 
 ### Erro ao executar Streamlit (`app/main.py` não encontrado)
 

@@ -56,23 +56,28 @@ with col1:
     card(
         "🎯 Verificação de Jogos",
         "Verifique múltiplos jogos simultaneamente e descubra se combinações já foram sorteadas.",
+        footer="📄 Página 🎯 Verificação",
     )
 
 with col2:
     card(
-        "🔮 Combinações Inéditas", "Gere jogos aleatórios que nunca foram sorteados anteriormente."
+        "🔮 Combinações Inéditas",
+        "Gere jogos aleatórios que nunca foram sorteados anteriormente.",
+        footer="📄 Página 🔮 Combinações Inéditas",
     )
 
 with col3:
     card(
         "📊 Estatísticas Avançadas",
         "Explore frequências, probabilidades empíricas e distribuição das dezenas.",
+        footer="📄 Página 📊 Estatísticas",
     )
 
 with col4:
     card(
-        "💰Custos e Probabilidades",
-        "Simule diferentes cenários de apostas, custos totais e probabilidades matemáticas reais.",
+        "💰 Custos e Probabilidades",
+        "Simule cenários de apostas, custos totais, valor esperado e probabilidades reais.",
+        footer="📊 Seção da página Estatísticas",
     )
 
 # =========================
@@ -123,7 +128,7 @@ st.markdown(
     Baixe o arquivo **XLSX oficial** da loteria desejada diretamente do site da Caixa Econômica Federal.
 
     ### 2️⃣ Faça o upload dos arquivos
-    Utilize o painel lateral para enviar os arquivos baixado ao sistema.
+    Utilize o painel lateral para enviar os arquivos baixados ao sistema.
 
     ### 3️⃣ Selecione a loteria e o tema
     No **painel lateral (Controles)**, escolha a modalidade e o tema claro/escuro —

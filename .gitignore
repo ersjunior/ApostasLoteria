@@ -41,6 +41,11 @@ htmlcov/
 .ruff_cache/
 .mypy_cache/
 
+# Fixtures de teste geradas em disco por tests/fixtures/factory.py
+# (artefatos determinísticos; o XLSX embute timestamp e gera ruído no diff)
+tests/fixtures/*.xlsx
+tests/fixtures/*.csv
+
 # OS
 .DS_Store
 Thumbs.db

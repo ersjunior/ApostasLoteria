@@ -70,10 +70,20 @@ st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
 
 _games_key = f"combo_games_{config['key']}"
 
-if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
+n_games = st.slider(
+    "Quantidade de jogos",
+    min_value=1,
+    max_value=20,
+    value=10,
+    key="combo_n_games",
+)
+
+_plural = "s" if n_games > 1 else ""
+
+if st.button(f"{config['icon']} Gerar {n_games} Jogo{_plural} Inédito{_plural}"):
     st.session_state[_games_key] = generate_unique_combinations(
         df=df,
-        n_games=10,
+        n_games=n_games,
         universo=config["universo"],
         total_bolas=config["total_bolas"],
         extra_fields=config.get("extra_fields"),

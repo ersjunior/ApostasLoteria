@@ -72,7 +72,7 @@ ApostasLoteria/
 **Observações**
 
 - Não existe `app/main.py` nem página `Forecast.py` — o gerador vive em Combinações Inéditas.
-- `app/ml/` é stub vazio; não há scikit-learn em produção.
+- Não há camada de ML nem scikit-learn em produção — as combinações são geradas por sorteio aleatório uniforme.
 - `requirements*.txt` são atalhos (`-e ".[…]"`).
 
 ---

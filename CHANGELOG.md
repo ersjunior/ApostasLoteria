@@ -7,6 +7,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+### Changed
+
+- Página **🔮 Combinações Inéditas**: quantidade de jogos agora é configurável por slider **"Quantidade de jogos"** (1–20, padrão 10), com rótulo do botão dinâmico — antes era fixo em 10 jogos.
+- **Home**: cards de "O que este sistema oferece" agora indicam a página de cada funcionalidade (novo rodapé opcional em `card`); o card **"💰 Custos e Probabilidades"** deixa explícito que é uma **seção da página Estatísticas**, não uma página própria (corrige também o espaçamento do título).
+- **Testes**: fixtures `.xlsx`/`.csv` deixam de ser versionadas — são geradas em disco por `tests/fixtures/factory.py` a cada execução. Adicionadas ao `.gitignore` e removidas do rastreamento, eliminando o ruído de diff causado pelo timestamp embutido no XLSX.
+- **Dependências**: o extra `[dev]` agora inclui o extra `[api]` (via self-reference `apostas-loteria[api]`). Assim `pip install -e ".[dev]"` habilita a suíte completa (o `TestClient` de `tests/test_api.py` depende de `httpx`) — não é mais preciso instalar `[dev,api]`. CI simplificado para `.[dev]` (passa a validar essa autossuficiência).
+
+### Fixed
+
+- **Ambiente de testes**: `pytest` deixava de coletar `tests/test_api.py` em venvs com apenas `[dev]` instalado, por falta de `httpx`/`fastapi`. Resolvido ao fazer `[dev]` incluir `[api]`.
+- **Home**: correção de typo — "arquivos baixado" → "arquivos baixados".
+- Remoção de referências residuais à pasta inexistente `app/ml/` (em `docs/ARCHITECTURE_NOTES.md` e no `omit` de cobertura no `pyproject.toml`).
+
 ## [1.0.0] - 2026-07-28
 
 Release inicial completo: plataforma de análise estatística, verificação de jogos

@@ -197,7 +197,7 @@ flowchart TB
 | `uvicorn[standard]` | 0.34.0 | Servidor ASGI |
 | `pydantic` | 2.12.5 | Validação de schemas de entrada |
 | `slowapi` | 0.1.9 | Rate limiting |
-| `httpx` | 0.28.1 | Cliente HTTP (smoke test) |
+| `httpx` | 0.28.1 | Cliente HTTP (smoke test e `TestClient` do FastAPI nos testes) |
 
 ### Dependências de desenvolvimento (`[dev]`)
 
@@ -208,6 +208,8 @@ flowchart TB
 | `ruff` | 0.16.0 | Linter + formatador |
 | `mypy` | 2.3.0 | Checagem de tipos |
 | `pre-commit` | 4.2.0 | Hooks de qualidade |
+
+> O extra `[dev]` **inclui o extra `[api]`** (via `apostas-loteria[api]`), pois `tests/test_api.py` exercita a API através do `TestClient` (que depende de `httpx`). Assim, `pip install -e ".[dev]"` já habilita a suíte de testes completa — não é preciso instalar `[dev,api]`.
 
 ### Infraestrutura
 
@@ -648,7 +650,7 @@ Isso elimina a duplicação de seletores em cada página e garante que a prefer�
 - **`theme.py`** — expõe componentes visuais que respeitam o tema ativo via `get_theme()`:
   - **`page_title(titulo, subtitulo)`** — cabeçalho da página.
   - **`section(titulo)`** — separador de seção.
-  - **`card(titulo, corpo)`** — cartão simples (usado na página "Feito por").
+  - **`card(titulo, corpo, footer=None)`** — cartão simples; o `footer` opcional adiciona uma linha discreta (com divisória) usada, por exemplo, para indicar em qual página a funcionalidade vive.
   - **`metric_card(label, valor, icone)`** — KPI estilizado.
   - **`game_card(...)`** — cartão de jogo gerado, com dezenas, status, cor de acento e extras.
   - **`lottery_badge(name, config, detail=None)`** — selo compacto da modalidade selecionada.
@@ -663,6 +665,8 @@ Um `st.selectbox` reutilizável (na sidebar ou no corpo) que lê `LOTTERIES` e r
 Ponto de entrada e hub de navegação. Configura `layout="wide"`, chama `render_app_chrome(show_lottery=True)` e apresenta:
 
 - Boas-vindas e proposta do projeto.
+- **Seção "📌 O que este sistema oferece"** — quatro `card` de funcionalidade. Cada cartão traz um `footer` indicando **onde a funcionalidade vive**: Verificação, Combinações Inéditas e Estatísticas apontam para suas páginas próprias; **"💰 Custos e Probabilidades"** é explicitamente marcado como **seção da página Estatísticas** (não é uma página separada), evitando sugerir uma navegação inexistente.
+- Seção "🎲 Loterias suportadas" e "📂 Status das Bases".
 - Um passo a passo de uso, incluindo a instrução **"3️⃣ Selecione a loteria e o tema"** apontando para o painel lateral de Controles.
 - Rodapé de jogo responsável.
 
@@ -721,7 +725,7 @@ Gera combinações que nunca saíram.
 
 - **Cabeçalho** + badge + `st.info` reforçando que é **sorteio aleatório uniforme, sem ML nem previsão**.
 - Carrega o dataset (necessário para saber o que já saiu).
-- **Seção "✨ Gerar Combinações"** — botão **"{ícone} Gerar 10 Jogos Inéditos"** que chama `generate_unique_combinations` e guarda os jogos no `session_state` (chave por modalidade).
+- **Seção "✨ Gerar Combinações"** — slider **"Quantidade de jogos"** (1–20, padrão 10) e botão **"{ícone} Gerar {n} Jogos Inéditos"** (rótulo dinâmico conforme o slider) que chama `generate_unique_combinations` com `n_games` selecionado e guarda os jogos no `session_state` (chave por modalidade).
 - **Seção "📋 Jogos Gerados"** — `game_card` para cada jogo, em grade de 3 colunas, com dezenas, status "❌ Nunca sorteado", cor de acento da modalidade, fundo pastel (helper `pastel_color` converte hex em `rgba` translúcido) e extras.
 - **Seção "📥 Exportar / Histórico"** — botão **"📄 Baixar jogos em CSV"** (via `export_csv`) e botão **"💾 Salvar no histórico"** (origem `SOURCE_COMBINATIONS`).
 - Rodapé de jogo responsável.
@@ -947,7 +951,9 @@ Na primeira execução o banco está vazio. Popule cada modalidade **fazendo upl
 
 ### Testes (`tests/`)
 
-A suíte cobre o domínio e a API: `test_statistics.py`, `test_generator.py`, `test_exporter.py`, `test_report.py`, `test_dataset.py`, `test_user_history.py`, `test_api.py`, além de fixtures XLSX/CSV por modalidade em `tests/fixtures/`.
+A suíte cobre o domínio e a API: `test_statistics.py`, `test_generator.py`, `test_exporter.py`, `test_report.py`, `test_dataset.py`, `test_user_history.py`, `test_api.py`, além de fixtures XLSX/CSV sintéticas por modalidade.
+
+As fixtures são **geradas em disco em tempo de execução** por `tests/fixtures/factory.py` (via `build_all_fixtures()`, invocado pelo `conftest.py`) — os arquivos `.xlsx`/`.csv` resultantes **não são versionados** (estão no `.gitignore`), pois o XLSX embute timestamp e produziria ruído no diff a cada execução. A fonte da verdade é o próprio `factory.py`.
 
 ```bash
 pytest --cov --cov-report=term-missing

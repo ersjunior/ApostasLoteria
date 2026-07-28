@@ -158,8 +158,20 @@ def game_card(
     )
 
 
-def card(title: str, content: str):
+def card(title: str, content: str, footer: str | None = None):
     theme = get_theme()
+
+    footer_html = ""
+    if footer:
+        footer_html = (
+            f'<div style="'
+            f"margin-top:14px;"
+            f"padding-top:10px;"
+            f"border-top:1px solid {theme['secondary']};"
+            f"font-size:12px;"
+            f"color:{theme['muted']};"
+            f'">{footer}</div>'
+        )
 
     st.markdown(
         f"""
@@ -172,7 +184,8 @@ def card(title: str, content: str):
             color:{theme["text"]};
         ">
             <h4 style="color:{theme["text"]}; margin-top:0;">{title}</h4>
-            <p style="color:{theme["muted"]};">{content}</p>
+            <p style="color:{theme["muted"]}; margin-bottom:0;">{content}</p>
+            {footer_html}
         </div>
         """,
         unsafe_allow_html=True,

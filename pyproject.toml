@@ -30,6 +30,9 @@ api = [
     "httpx==0.28.1",
 ]
 dev = [
+    # Inclui o extra `api` para que a suíte completa (test_api.py usa httpx via
+    # TestClient) rode apenas com `pip install -e ".[dev]"`.
+    "apostas-loteria[api]",
     "pytest==9.0.2",
     "pytest-cov==7.1.0",
     "ruff==0.16.0",
@@ -99,7 +102,6 @@ omit = [
     "app/Home.py",
     "app/pages/*",
     "app/ui/*",
-    "app/ml/*",
     "app/combinations/*",
     "tests/*",
 ]

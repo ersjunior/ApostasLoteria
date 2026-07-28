@@ -40,10 +40,10 @@ Seja respeitoso e construtivo. Este é um projeto **educacional** sobre loterias
 3. **Instale as dependências**
 
    ```bash
-   pip install -e ".[dev,api]"
+   pip install -e ".[dev]"
    ```
 
-   Equivalente parcial via atalhos: `requirements.txt`, `requirements-api.txt`, `requirements-dev.txt`.
+   O extra `[dev]` já **inclui o extra `[api]`** (fastapi, httpx, …), então esse único comando habilita a suíte de testes completa, incluindo `tests/test_api.py`. Equivalente via atalho: `requirements-dev.txt` (que também resolve as dependências da API).
 
 4. **Configure variáveis de ambiente (opcional)**
 
