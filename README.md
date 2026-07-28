@@ -154,9 +154,12 @@ Na página **Home**:
 |        ├── test_statistics.py
 |        └── test_validator.py
 ├── pytest.ini
+├── docs/                           # Documentação complementar
+│        ├── ARCHITECTURE_NOTES.md
+│        ├── COMO_EXECUTAR.md
+│        └── README.md
 ├── requirements.txt
 ├── requirements-api.txt
-├── COMO_EXECUTAR.md
 └── README.md
 ```
 
@@ -244,7 +247,9 @@ pip install -r requirements.txt
 streamlit run app/Home.py
 ```
 
-Para a API localmente, instale também `pip install -r requirements-api.txt` e execute `uvicorn api.main:app --reload` a partir da raiz do projeto. Detalhes adicionais em [COMO_EXECUTAR.md](COMO_EXECUTAR.md).
+Para a API localmente, instale também `pip install -r requirements-api.txt` e execute `uvicorn api.main:app --reload` a partir da raiz do projeto. Detalhes adicionais em [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
+
+Mais documentação em [docs/](docs/README.md) (arquitetura, guias complementares).
 
 ---
 

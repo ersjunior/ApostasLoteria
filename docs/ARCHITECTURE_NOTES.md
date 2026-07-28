@@ -68,12 +68,15 @@ ApostasLoteria/
 ├── docker/
 │   ├── Dockerfile.api
 │   └── Dockerfile.streamlit
+├── docs/
+│   ├── ARCHITECTURE_NOTES.md
+│   ├── COMO_EXECUTAR.md
+│   └── README.md
 ├── tests/
 │   ├── __init__.py
 │   ├── test_forecast.py
 │   ├── test_statistics.py
 │   └── test_validator.py
-├── COMO_EXECUTAR.md
 ├── docker-compose.yml
 ├── LICENSE
 ├── pytest.ini
