@@ -56,6 +56,29 @@ def megasena_config() -> dict:
     return {**cfg, "file_path": str(FIXTURES_DIR / "megasena_out.xlsx")}
 
 
+@pytest.fixture(autouse=True)
+def isolated_sqlite_db(tmp_path, monkeypatch):
+    """Banco SQLite isolado por teste — evita condição de corrida entre casos."""
+    db = tmp_path / "loterias.db"
+    monkeypatch.setenv("LOTTERIAS_DB_PATH", str(db))
+    yield db
+
+
+@pytest.fixture
+def db_path(isolated_sqlite_db) -> Path:
+    return isolated_sqlite_db
+
+
+@pytest.fixture
+def sample_megasena_db(megasena_fixture, megasena_config):
+    """Popula Mega-Sena no SQLite de teste."""
+    from loterias_core.repository import update_lottery_from_raw
+
+    raw = pd.read_excel(megasena_fixture)
+    update_lottery_from_raw("megasena", raw, megasena_config, incremental=False)
+    return "megasena"
+
+
 @pytest.fixture
 def sample_megasena_df() -> pd.DataFrame:
     return pd.DataFrame(

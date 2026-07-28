@@ -71,7 +71,7 @@ O projeto oferece:
 - Simulação de custos e probabilidades
 
 ### 🌐 API REST (Mega-Sena)
-- `GET /health` — health check e status do dataset
+- `GET /health` — health check, status do banco SQLite e cache por modalidade
 - `POST /verify/` — verificação de jogos
 - `GET /combinations/` e `GET /forecast/` — combinações inéditas
 - `GET` / `POST /dataset/` — metadados e atualização via scraper
@@ -97,17 +97,17 @@ Faça o download do arquivo **XLSX** da loteria desejada (link também disponív
 Na página **Home** (`app/Home.py`), barra lateral **"📤 Upload Manual do XLSX"**:
 1. Selecione a loteria correspondente ao arquivo
 2. Envie o XLSX oficial
-3. Confira **"📂 Status das Bases"** na Home (✅ = base carregada)
+3. Confira **"📂 Status das Bases"** na Home (✅ = base carregada no SQLite)
 
-Cada loteria é salva em `app/data/<Nome da Loteria>.xlsx` (ex.: `app/data/Mega-Sena.xlsx`).
+Os dados são persistidos em **`app/data/loterias.db`** (SQLite), compartilhado entre Streamlit e API no Docker.
 
 ⚠️ Use apenas arquivos oficiais da Caixa.
 
 ---
 
-### 2️⃣ bis — Atualização via API (opcional, só Mega-Sena)
+### 2️⃣ bis — Atualização via API (opcional, Mega-Sena)
 
-Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo: `app/data/megasena.csv`. Execute `POST /dataset/` em http://localhost:8000/docs para baixar a Mega-Sena automaticamente. Esse fluxo **não** substitui o upload XLSX do Streamlit.
+Com a **API FastAPI** em execução, use `POST /dataset/` em http://localhost:8000/docs para baixar a Mega-Sena automaticamente. A atualização é **incremental por concurso** — só novos sorteios são inseridos no banco.
 
 ---
 
@@ -401,8 +401,52 @@ Especialista em Dados, Engenharia e Inteligência Artificial.
 - [x] CI (lint, testes, cobertura)
 - [x] Pacote `loterias_core` compartilhado
 - [ ] Histórico de jogos do usuário
-- [ ] Cache avançado por loteria
-- [ ] Deploy em cloud (Streamlit Cloud / cloud provider)
+- [x] Cache avançado por loteria (SQLite + atualização incremental)
+- [x] Deploy em cloud (Streamlit Community Cloud)
+
+---
+
+## 🚀 Deploy (Streamlit Community Cloud)
+
+### Pré-requisitos
+
+- Repositório no GitHub (público ou privado com plano compatível)
+- Conta em [share.streamlit.io](https://share.streamlit.io/)
+
+### Passo a passo
+
+1. **Fork / push** do repositório para o GitHub.
+2. Acesse [Streamlit Community Cloud](https://share.streamlit.io/) → **New app**.
+3. Selecione o repositório, branch e defina:
+   - **Main file path:** `app/Home.py`
+   - **Python version:** 3.11+
+4. Em **Advanced settings → Secrets**, configure (veja [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example)):
+
+```toml
+LOTTERIAS_DB_PATH = "app/data/loterias.db"
+```
+
+5. Clique em **Deploy**. O app sobe sem dados — na primeira visita, faça **upload do XLSX** oficial na barra lateral ou popule via API em outro ambiente e copie o `loterias.db`.
+
+### Variáveis de ambiente
+
+| Variável | Padrão | Descrição |
+|----------|--------|-----------|
+| `LOTTERIAS_DB_PATH` | `app/data/loterias.db` | Caminho do banco SQLite |
+
+No Cloud, secrets em `st.secrets` são lidos na inicialização via `app/config.py`.
+
+### Banco vazio no primeiro boot
+
+Se nenhuma modalidade estiver carregada, a Home exibe aviso e instruções. Faça upload do XLSX oficial ou use `POST /dataset/` (API) para a Mega-Sena.
+
+### Docker local (produção)
+
+```bash
+docker compose up --build
+```
+
+Volume `apostas-data` persiste `loterias.db` entre reinícios. Ambos os serviços usam `LOTTERIAS_DB_PATH=/app/app/data/loterias.db`.
 
 ---
 

@@ -49,29 +49,25 @@ def test_validate_dataset_schema_accepts_valid_file():
     validate_dataset_schema(df, MEGASENA_CONFIG, lottery_name="Mega-Sena")
 
 
-def test_persist_dataset_rejects_invalid_without_touching_existing(tmp_path):
-    existing_path = tmp_path / "megasena.xlsx"
-    existing = pd.DataFrame({"jogo": [[1, 2, 3, 4, 5, 6]]})
-    existing.to_excel(existing_path, index=False)
+def test_persist_dataset_rejects_invalid_without_touching_existing(sample_megasena_db):
+    from loterias_core.repository import load_lottery_dataframe
 
-    config = {**MEGASENA_CONFIG, "file_path": str(existing_path)}
-    before = existing_path.read_bytes()
+    before = len(load_lottery_dataframe("megasena"))
 
     with pytest.raises(DatasetSchemaError):
-        persist_dataset(_invalid_megasena_df(), config, lottery_name="Mega-Sena")
+        persist_dataset(_invalid_megasena_df(), MEGASENA_CONFIG, lottery_name="Mega-Sena")
 
-    assert existing_path.read_bytes() == before
+    after = len(load_lottery_dataframe("megasena"))
+    assert after == before
 
 
-def test_persist_dataset_saves_valid_file(tmp_path):
-    target = tmp_path / "megasena.xlsx"
-    config = {**MEGASENA_CONFIG, "file_path": str(target)}
+def test_persist_dataset_saves_valid_to_sqlite():
+    from loterias_core.repository import load_lottery_dataframe
 
-    result = persist_dataset(_valid_megasena_df(), config, lottery_name="Mega-Sena")
+    result = persist_dataset(_valid_megasena_df(), MEGASENA_CONFIG, lottery_name="Mega-Sena")
 
-    assert target.exists()
     assert "jogo" in result.columns
-    saved = pd.read_excel(target)
+    saved = load_lottery_dataframe("megasena")
     assert len(saved) == 2
     assert "jogo" in saved.columns
 

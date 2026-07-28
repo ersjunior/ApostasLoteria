@@ -126,15 +126,17 @@ def test_save_dataset_persists_and_enriches(megasena_fixture, tmp_path):
 
 
 def test_persist_dataset_validates_and_writes(megasena_fixture, megasena_config, tmp_path):
-    megasena_config["file_path"] = str(tmp_path / "persisted.xlsx")
     raw = pd.read_excel(megasena_fixture)
     result = persist_dataset(raw, megasena_config, lottery_name="Mega-Sena")
     assert len(result) == 2
-    assert Path(megasena_config["file_path"]).exists()
+
+    from loterias_core.repository import load_lottery_dataframe
+
+    loaded = load_lottery_dataframe("megasena")
+    assert len(loaded) == 2
 
 
 def test_persist_dataset_invalid_schema_raises(megasena_config, tmp_path):
-    megasena_config["file_path"] = str(tmp_path / "bad.xlsx")
     raw = pd.DataFrame({"coluna_errada": [1]})
     with pytest.raises(DatasetSchemaError):
         persist_dataset(raw, megasena_config)
@@ -148,64 +150,60 @@ def test_process_raw_dataset_from_dataframe(megasena_fixture, megasena_config):
 
 
 @patch("api.services.core.download_lottery_data")
-def test_update_dataset_persists_csv(mock_download, megasena_fixture, tmp_path, monkeypatch):
+def test_update_dataset_persists_sqlite(mock_download, megasena_fixture, megasena_config):
     import api.services.core as core
 
     raw = pd.read_excel(megasena_fixture)
     mock_download.return_value = raw
-    csv_path = tmp_path / "megasena.csv"
-    monkeypatch.setattr(core, "DATASET_PATH", str(csv_path))
 
     df = core.update_dataset()
     assert len(df) == 2
-    assert csv_path.exists()
     assert "jogo" in df.columns
+    status = core.get_dataset_status()
+    assert status["exists"] is True
+    assert status["total_records"] == 2
     mock_download.assert_called_once()
 
 
 @patch("api.services.core.download_lottery_data")
-def test_update_dataset_scraper_error(mock_download, tmp_path, monkeypatch):
+def test_update_dataset_scraper_error(mock_download):
     import api.services.core as core
     from loterias_core.scraper import ScraperError
 
     mock_download.side_effect = ScraperError("falha simulada")
-    monkeypatch.setattr(core, "DATASET_PATH", str(tmp_path / "megasena.csv"))
 
     with pytest.raises(RuntimeError, match="falha simulada"):
         core.update_dataset()
 
 
-def test_get_dataset_status_missing(tmp_path, monkeypatch):
+def test_get_dataset_status_missing():
     import api.services.core as core
 
-    monkeypatch.setattr(core, "DATASET_PATH", str(tmp_path / "missing.csv"))
     status = core.get_dataset_status()
     assert status["exists"] is False
     assert status["total_records"] is None
 
 
-def test_get_dataset_status_with_csv(megasena_csv_fixture, monkeypatch):
+def test_get_dataset_status_with_sqlite(sample_megasena_db):
     import api.services.core as core
 
-    monkeypatch.setattr(core, "DATASET_PATH", str(megasena_csv_fixture))
     status = core.get_dataset_status()
     assert status["exists"] is True
     assert status["total_records"] == 2
     assert status["last_update"] is not None
+    assert status["last_concurso"] == 2
 
 
-def test_load_dataset_api_csv(megasena_csv_fixture, monkeypatch):
+def test_load_dataset_api_sqlite(sample_megasena_db):
     import api.services.core as core
 
-    monkeypatch.setattr(core, "DATASET_PATH", str(megasena_csv_fixture))
     df = core.load_dataset()
     assert len(df) == 2
 
 
-def test_load_dataset_api_missing_raises(tmp_path, monkeypatch):
+def test_load_dataset_api_missing_raises():
     import api.services.core as core
 
-    monkeypatch.setattr(core, "DATASET_PATH", str(tmp_path / "missing.csv"))
     with pytest.raises(FileNotFoundError):
         core.load_dataset()
 

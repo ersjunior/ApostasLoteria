@@ -47,4 +47,5 @@ Thumbs.db
 # Projeto específico
 app/data/*.csv
 app/data/*.xlsx
+app/data/*.db
 !app/data/.gitkeep

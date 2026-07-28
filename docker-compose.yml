@@ -2,7 +2,7 @@
 # Uso: docker compose up --build
 #
 # Persistência: volume `apostas-data` montado em /app/app/data em ambos os serviços.
-# Streamlit grava XLSX por loteria; API grava megasena.csv — ambos no mesmo volume.
+# Banco SQLite compartilhado (`loterias.db`) — elimina condição de corrida entre API e Streamlit.
 #
 # Integração: o Streamlit consome loterias_core localmente (não chama a API por HTTP).
 # Os serviços são independentes e compartilham apenas o volume de dados.
@@ -15,6 +15,8 @@ services:
       dockerfile: docker/Dockerfile.streamlit
     ports:
       - "8501:8501"
+    environment:
+      - LOTTERIAS_DB_PATH=/app/app/data/loterias.db
     volumes:
       - apostas-data:/app/app/data
     restart: unless-stopped
@@ -37,6 +39,8 @@ services:
       dockerfile: docker/Dockerfile.api
     ports:
       - "8000:8000"
+    environment:
+      - LOTTERIAS_DB_PATH=/app/app/data/loterias.db
     volumes:
       - apostas-data:/app/app/data
     restart: unless-stopped

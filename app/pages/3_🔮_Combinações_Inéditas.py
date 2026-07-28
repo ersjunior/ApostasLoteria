@@ -79,7 +79,7 @@ st.markdown(
 # =========================
 try:
     df = load_dataset(
-        file_path=config["file_path"],
+        lottery_key=config["key"],
         total_bolas=config["total_bolas"],
         extra_fields=config.get("extra_fields"),
         multiple_draws=config.get("multiple_draws", False),

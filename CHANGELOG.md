@@ -9,6 +9,21 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Added
 
+- Persistência em **SQLite** (`app/data/loterias.db`) compartilhada entre Streamlit e API — elimina condição de corrida entre XLSX/CSV.
+- Módulos `loterias_core/storage.py` e `loterias_core/repository.py` com cache incremental por modalidade (último concurso, última atualização).
+- Import de XLSX oficial para popular o banco (upload manual mantido).
+- Metadados de cache expostos em `GET /health` (`database`, `lotteries`) e na UI (Home — Status das Bases).
+- Preparação para **Streamlit Community Cloud**: `.streamlit/secrets.toml.example`, `app/config.py` e seção Deploy no README.
+- Testes de persistência SQLite e cache incremental (`tests/test_storage.py`).
+
+### Changed
+
+- `persist_dataset()` e `update_dataset()` gravam no SQLite; API deixa de usar `megasena.csv`.
+- Docker Compose: `LOTTERIAS_DB_PATH` e volume persistente para `loterias.db`.
+- Páginas Streamlit carregam dados por `lottery_key` em vez de `file_path` XLSX.
+
+### Added (anterior)
+
 - Pacote `loterias_core/` como fonte única de domínio (combinatória, estatística, validação, scraper, schema).
 - API FastAPI com rotas `/health`, `/verify/`, `/combinations/`, `/forecast/` e `/dataset/`.
 - Health check em `GET /health` com status do dataset Mega-Sena.

@@ -53,10 +53,9 @@ def update_dataset_endpoint(request: Request):
         df = update_dataset()
         elapsed = (datetime.now(tz=UTC) - started_at).total_seconds()
         logger.info(
-            "Scrape concluído com sucesso em %.1fs — %d registros gravados em %s",
+            "Scrape concluído com sucesso em %.1fs — %d registros gravados",
             elapsed,
             len(df),
-            core.DATASET_PATH,
         )
         status = get_dataset_status()
         return {

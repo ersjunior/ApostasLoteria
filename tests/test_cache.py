@@ -10,17 +10,17 @@ def test_load_dataset_cached_delegates_to_loader():
     with patch("app.services.cache.load_dataset", return_value=expected) as mock_load:
         from app.services.cache import load_dataset_cached
 
-        result = load_dataset_cached()
-        mock_load.assert_called_once_with()
+        result = load_dataset_cached("megasena")
+        mock_load.assert_called_once_with(lottery_key="megasena")
         pd.testing.assert_frame_equal(result, expected)
 
 
-def test_app_dataset_load_internal_bypasses_cache(megasena_fixture):
+def test_app_dataset_load_internal_bypasses_cache(sample_megasena_db):
     with patch("app.services.dataset.st") as mock_st:
         mock_st.cache_data = lambda **kwargs: lambda fn: fn
         from app.services.dataset import load_dataset_internal
 
-        df = load_dataset_internal(str(megasena_fixture), total_bolas=6)
+        df = load_dataset_internal("megasena")
         assert len(df) == 2
         assert "jogo" in df.columns
 

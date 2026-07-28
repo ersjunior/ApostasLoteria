@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from api.services.core import get_dataset_status
+from api.services.core import health_info
 
 router = APIRouter(tags=["health"])
 
@@ -12,10 +12,8 @@ router = APIRouter(tags=["health"])
 @router.get("/health")
 def health_check():
     """
-    Verifica se a API está operacional e reporta status do dataset Mega-Sena.
+    Verifica se a API está operacional e reporta status do banco SQLite
+    e cache por modalidade.
     """
-    dataset = get_dataset_status()
-    return {
-        "status": "ok",
-        "dataset": dataset,
-    }
+    payload = health_info()
+    return {"status": "ok", **payload}

@@ -29,23 +29,8 @@ def client():
 
 
 @pytest.fixture
-def sample_dataset(tmp_path, monkeypatch):
-    csv_path = tmp_path / "megasena.csv"
-    df = pd.DataFrame(
-        {
-            "concurso": [1, 2],
-            "bola1": [1, 2],
-            "bola2": [3, 4],
-            "bola3": [5, 6],
-            "bola4": [7, 8],
-            "bola5": [9, 10],
-            "bola6": [11, 12],
-            "jogo": [[1, 3, 5, 7, 9, 11], [2, 4, 6, 8, 10, 12]],
-        }
-    )
-    df.to_csv(csv_path, index=False)
-    monkeypatch.setattr("api.services.core.DATASET_PATH", str(csv_path))
-    return csv_path
+def sample_dataset(sample_megasena_db):
+    return sample_megasena_db
 
 
 def test_health_returns_200(client):
@@ -54,6 +39,8 @@ def test_health_returns_200(client):
     body = response.json()
     assert body["status"] == "ok"
     assert "dataset" in body
+    assert "lotteries" in body
+    assert "database" in body
     assert body["dataset"]["exists"] is False
 
 
@@ -64,6 +51,7 @@ def test_health_with_dataset(client, sample_dataset):
     assert body["dataset"]["exists"] is True
     assert body["dataset"]["total_records"] == 2
     assert body["dataset"]["last_update"] is not None
+    assert body["lotteries"]["megasena"]["exists"] is True
 
 
 def test_verify_invalid_payload_returns_422(client, sample_dataset):
@@ -90,11 +78,11 @@ def test_verify_duplicate_numbers_returns_422(client, sample_dataset):
 
 
 def test_verify_existing_game(client, sample_dataset):
-    response = client.post("/verify/", json={"numbers": [1, 3, 5, 7, 9, 11]})
+    response = client.post("/verify/", json={"numbers": [1, 2, 3, 4, 5, 6]})
     assert response.status_code == 200
     body = response.json()
     assert body["found"] is True
-    assert body["numbers"] == [1, 3, 5, 7, 9, 11]
+    assert body["numbers"] == [1, 2, 3, 4, 5, 6]
 
 
 def test_verify_new_game(client, sample_dataset):
@@ -104,8 +92,7 @@ def test_verify_new_game(client, sample_dataset):
     assert body["found"] is False
 
 
-def test_verify_dataset_missing_returns_404(client, tmp_path, monkeypatch):
-    monkeypatch.setattr("api.services.core.DATASET_PATH", str(tmp_path / "missing.csv"))
+def test_verify_dataset_missing_returns_404(client):
     response = client.post("/verify/", json={"numbers": [1, 2, 3, 4, 5, 6]})
     assert response.status_code == 404
 
@@ -136,14 +123,12 @@ def test_forecast_success(client, sample_dataset):
         assert game["dezenas"] == sorted(game["dezenas"])
 
 
-def test_forecast_dataset_missing_returns_404(client, tmp_path, monkeypatch):
-    monkeypatch.setattr("api.services.core.DATASET_PATH", str(tmp_path / "missing.csv"))
+def test_forecast_dataset_missing_returns_404(client):
     response = client.get("/forecast/?n=1")
     assert response.status_code == 404
 
 
-def test_get_dataset_missing_returns_404(client, tmp_path, monkeypatch):
-    monkeypatch.setattr("api.services.core.DATASET_PATH", str(tmp_path / "missing.csv"))
+def test_get_dataset_missing_returns_404(client):
     response = client.get("/dataset/")
     assert response.status_code == 404
 

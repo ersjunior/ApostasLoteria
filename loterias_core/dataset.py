@@ -251,7 +251,10 @@ def load_dataset(
                 axis=1,
             )
 
-            all_rows.append(temp[["jogo"]])
+            if "concurso" in df_raw.columns:
+                temp["concurso"] = df_raw["concurso"].values
+            temp["draw_index"] = draw
+            all_rows.append(temp[["jogo"] + (["concurso"] if "concurso" in temp.columns else []) + ["draw_index"]])
 
         return pd.concat(all_rows, ignore_index=True)
 
@@ -309,11 +312,13 @@ def persist_dataset(
     lottery_name: str | None = None,
 ) -> pd.DataFrame:
     """
-    Valida schema, processa e persiste com escrita atômica.
-    Não altera o arquivo final se qualquer etapa falhar.
+    Valida schema, processa e persiste no SQLite.
+    Não altera o banco se qualquer etapa falhar.
     """
+    from loterias_core.repository import persist_lottery_dataframe
+
     name = lottery_name or config.get("name", "Loteria")
-    file_path = config["file_path"]
+    lottery_key = config["key"]
 
     try:
         processed = process_raw_dataset(df_raw, config)
@@ -327,13 +332,20 @@ def persist_dataset(
         ) from exc
 
     try:
-        atomic_write_excel(processed, file_path)
+        persist_lottery_dataframe(lottery_key, processed, incremental=False)
     except Exception as exc:
         raise DatasetSchemaError(
             f"Falha ao gravar a base de **{name}**.\n\n{exc}\n\nO dataset anterior foi preservado."
         ) from exc
 
     return processed
+
+
+def load_dataset_by_key(lottery_key: str) -> pd.DataFrame:
+    """Carrega dataset processado do SQLite."""
+    from loterias_core.repository import load_lottery_dataframe
+
+    return load_lottery_dataframe(lottery_key)
 
 
 # =========================

@@ -9,11 +9,14 @@ root_dir = Path(__file__).parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
+from app.config import configure_runtime
 from app.core.lotteries import LOTTERIES
-from app.services.dataset import persist_dataset
+from app.services.dataset import get_lottery_cache_status, persist_dataset
 from app.ui.theme import card, page_title, responsible_gaming_footer, section
 from app.ui.theme_manager import apply_theme, init_theme
 from loterias_core.schema import DatasetSchemaError
+
+configure_runtime()
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -241,6 +244,17 @@ st.sidebar.caption(
 # =============================
 section("📂 Status das Bases")
 st.markdown("<div style='margin-top:25px'></div>", unsafe_allow_html=True)
+
+cache_status = get_lottery_cache_status()
+loaded_count = sum(1 for cfg in LOTTERIES.values() if cache_status.get(cfg["key"], {}).get("exists"))
+
+if loaded_count == 0:
+    st.warning(
+        "⚠️ **Nenhuma base carregada ainda.**\n\n"
+        "Faça upload do XLSX oficial no painel lateral ou use a API (`POST /dataset/`) "
+        "para popular o banco SQLite na primeira execução."
+    )
+
 COLS_PER_ROW = 5
 items = list(LOTTERIES.items())
 
@@ -249,8 +263,12 @@ for i in range(0, len(items), COLS_PER_ROW):
 
     for col, (name, cfg) in zip(cols, items[i : i + COLS_PER_ROW], strict=False):
         with col:
-            if Path(cfg["file_path"]).exists():
-                st.success(f"✅ {name}")
+            status = cache_status.get(cfg["key"], {})
+            if status.get("exists"):
+                last = status.get("last_concurso")
+                total = status.get("total_records", 0)
+                detail = f" — concurso {last}, {total} registros" if last else f" — {total} registros"
+                st.success(f"✅ {name}{detail}")
             else:
                 st.warning(f"⚠️ {name}")
 
