@@ -7,18 +7,27 @@ from loterias_core.combinatorics import (
     win_probability,
 )
 from loterias_core.dataset import (
+    atomic_write_excel,
     enrich_dataset,
     handle_lotomania,
     handle_mais_milionaria,
     handle_supersete,
     load_dataset,
     normalize_columns,
+    persist_dataset,
+    process_raw_dataset,
     save_dataset,
 )
 from loterias_core.expected_value import calculate_expected_value
 from loterias_core.generator import generate_unique_combinations
 from loterias_core.lotteries import LOTTERIES, LOTTERY_CONFIGS, LotteryConfig
-from loterias_core.scraper import download_megasena_data
+from loterias_core.scraper import (
+    DataSource,
+    ScraperError,
+    download_lottery_data,
+    download_megasena_data,
+)
+from loterias_core.schema import DatasetSchemaError, validate_dataset_schema
 from loterias_core.statistics import (
     ChiSquareResult,
     chi_square_uniformity_test,
@@ -29,7 +38,10 @@ from loterias_core.statistics import (
 from loterias_core.validator import check_game
 
 __all__ = [
-    "LOTTERIES",
+    "DataSource",
+    "DatasetSchemaError",
+    "ScraperError",
+    "atomic_write_excel",
     "LOTTERY_CONFIGS",
     "ChiSquareResult",
     "LotteryConfig",
@@ -37,6 +49,7 @@ __all__ = [
     "check_game",
     "chi_square_uniformity_test",
     "combination",
+    "download_lottery_data",
     "download_megasena_data",
     "empirical_probability",
     "enrich_dataset",
@@ -48,8 +61,11 @@ __all__ = [
     "handle_mais_milionaria",
     "handle_supersete",
     "load_dataset",
-    "normalize_columns",
+    "persist_dataset",
+    "process_raw_dataset",
     "save_dataset",
     "total_combinations",
+    "validate_dataset_schema",
+    "LOTTERIES",
     "win_probability",
 ]

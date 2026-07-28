@@ -1,7 +1,11 @@
 import os
+import tempfile
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
+
+from loterias_core.schema import DatasetSchemaError, validate_dataset_schema
 
 
 # =========================
@@ -258,11 +262,87 @@ def load_dataset(
 
 
 # =========================
+# ESCRITA ATÔMICA
+# =========================
+def atomic_write_excel(df: pd.DataFrame, file_path: str) -> None:
+    """Grava XLSX em arquivo temporário e renomeia atomicamente."""
+    path = Path(file_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    fd, tmp_name = tempfile.mkstemp(suffix=".xlsx", dir=path.parent)
+    os.close(fd)
+    tmp_path = Path(tmp_name)
+
+    try:
+        df.to_excel(tmp_path, index=False, engine="openpyxl")
+        os.replace(tmp_path, path)
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def _config_kwargs(config: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "total_bolas": config["total_bolas"],
+        "extra_fields": config.get("extra_fields"),
+        "multiple_draws": config.get("multiple_draws", False),
+        "special_handler": config.get("special_handler"),
+    }
+
+
+def process_raw_dataset(df_raw: pd.DataFrame, config: dict[str, Any]) -> pd.DataFrame:
+    """Normaliza, valida schema e enriquece um DataFrame bruto (upload ou download)."""
+    df = normalize_columns(df_raw.copy())
+    validate_dataset_schema(df, config)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir) / "staging.xlsx"
+        df.to_excel(tmp_path, index=False, engine="openpyxl")
+        return load_dataset(str(tmp_path), **_config_kwargs(config))
+
+
+def persist_dataset(
+    df_raw: pd.DataFrame,
+    config: dict[str, Any],
+    *,
+    lottery_name: str | None = None,
+) -> pd.DataFrame:
+    """
+    Valida schema, processa e persiste com escrita atômica.
+    Não altera o arquivo final se qualquer etapa falhar.
+    """
+    name = lottery_name or config.get("name", "Loteria")
+    file_path = config["file_path"]
+
+    try:
+        processed = process_raw_dataset(df_raw, config)
+    except DatasetSchemaError:
+        raise
+    except Exception as exc:
+        raise DatasetSchemaError(
+            f"Erro ao processar o arquivo de **{name}**.\n\n"
+            f"{exc}\n\n"
+            "Verifique se o XLSX é o arquivo oficial da modalidade selecionada."
+        ) from exc
+
+    try:
+        atomic_write_excel(processed, file_path)
+    except Exception as exc:
+        raise DatasetSchemaError(
+            f"Falha ao gravar a base de **{name}**.\n\n"
+            f"{exc}\n\n"
+            "O dataset anterior foi preservado."
+        ) from exc
+
+    return processed
+
+
+# =========================
 # SALVAR DATASET
 # =========================
 def save_dataset(df: pd.DataFrame, file_path: str, total_bolas: int):
     df = normalize_columns(df)
     df = enrich_dataset(df, total_bolas)
 
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    df.to_excel(file_path, index=False)
+    atomic_write_excel(df, file_path)

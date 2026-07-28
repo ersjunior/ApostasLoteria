@@ -8,6 +8,7 @@ from loterias_core.dataset import (
     handle_mais_milionaria,
     handle_supersete,
     normalize_columns,
+    persist_dataset,
 )
 from loterias_core.dataset import (
     load_dataset as _load_dataset,
@@ -24,6 +25,7 @@ __all__ = [
     "load_dataset",
     "load_dataset_internal",
     "normalize_columns",
+    "persist_dataset",
     "save_dataset",
 ]
 

@@ -22,6 +22,7 @@ class LotteryConfig:
     multiple_draws: bool = False
     special_handler: str | None = None
     extra_fields: dict[str, int] | None = None
+    portal_modalidade: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {
@@ -33,6 +34,7 @@ class LotteryConfig:
             "placeholder": self.placeholder,
             "file_path": self.file_path,
             "price_table": self.price_table,
+            "portal_modalidade": self.portal_modalidade,
         }
         if self.multiple_draws:
             data["multiple_draws"] = True
@@ -53,6 +55,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=60,
         placeholder="01, 05, 12, 23, 34, 56",
         file_path="app/data/Mega-Sena.xlsx",
+        portal_modalidade="Mega-Sena",
         price_table={
             6: 6.00,
             7: 42.00,
@@ -80,6 +83,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=25,
         placeholder="1, 2, 3, ..., 15",
         file_path="app/data/Lotofácil.xlsx",
+        portal_modalidade="Lotofacil",
         price_table={
             15: 3.00,
             16: 48.00,
@@ -98,6 +102,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=80,
         placeholder="01, 02, 03, 04, 05",
         file_path="app/data/Quina.xlsx",
+        portal_modalidade="Quina",
         price_table={
             5: 2.50,
             6: 15.00,
@@ -121,6 +126,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=50,
         placeholder="01, 02, 03, 04, 05, 06",
         file_path="app/data/Dupla Sena.xlsx",
+        portal_modalidade="Dupla Sena",
         multiple_draws=True,
         price_table={
             6: 2.50,
@@ -144,6 +150,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=100,
         placeholder="50 dezenas (01–100)",
         file_path="app/data/Lotomania.xlsx",
+        portal_modalidade="Lotomania",
         special_handler="lotomania",
         price_table={50: 3.00},
     ),
@@ -156,6 +163,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=31,
         placeholder="01, 02, 03, 04, 05, 06, 07",
         file_path="app/data/Dia de Sorte.xlsx",
+        portal_modalidade="Dia de Sorte",
         price_table={
             7: 2.50,
             8: 20.00,
@@ -177,6 +185,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=80,
         placeholder="7 dezenas + Time do Coração",
         file_path="app/data/Timemania.xlsx",
+        portal_modalidade="Timemania",
         extra_fields={"timecoração": 1},
         price_table={7: 3.50},
     ),
@@ -189,6 +198,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=10,
         placeholder="7 números (0–9)",
         file_path="app/data/Super Sete.xlsx",
+        portal_modalidade="Super Sete",
         special_handler="supersete",
         price_table={
             7: 2.50,
@@ -211,6 +221,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         universo=50,
         placeholder="6 dezenas + 2 trevos",
         file_path="app/data/+Milionária.xlsx",
+        portal_modalidade="+Milionaria",
         special_handler="mais_milionaria",
         price_table={6: 6.00},
     ),

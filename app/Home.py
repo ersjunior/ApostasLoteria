@@ -10,9 +10,10 @@ if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
 from app.core.lotteries import LOTTERIES
-from app.services.dataset import enrich_dataset, normalize_columns
+from app.services.dataset import persist_dataset
 from app.ui.theme import card, page_title, section
 from app.ui.theme_manager import apply_theme, init_theme
+from loterias_core.schema import DatasetSchemaError
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -189,20 +190,22 @@ uploaded_file = st.sidebar.file_uploader(
 )
 
 if uploaded_file is not None:
-    config = LOTTERIES[loteria_upload]
+    config = {**LOTTERIES[loteria_upload], "name": loteria_upload}
 
     try:
         df = pd.read_excel(uploaded_file)
-        df = normalize_columns(df)
-        df = enrich_dataset(df, config["total_bolas"])
-
-        df.to_excel(config["file_path"], index=False)
+        persist_dataset(df, config, lottery_name=loteria_upload)
         st.cache_data.clear()
 
         st.sidebar.success(f"✅ Base da **{loteria_upload}** carregada com sucesso!")
 
+    except DatasetSchemaError as e:
+        st.sidebar.error(str(e))
     except Exception as e:
-        st.sidebar.error(f"❌ Erro ao processar o arquivo: {str(e)}")
+        st.sidebar.error(
+            f"❌ Erro ao processar o arquivo.\n\n{e}\n\n"
+            "Verifique se o XLSX é o arquivo oficial da modalidade selecionada."
+        )
 
 # =========================
 # SIDEBAR — BASE DE DADOS
