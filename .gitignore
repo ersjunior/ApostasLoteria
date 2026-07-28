@@ -35,6 +35,7 @@ env/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 *.cover
 .ruff_cache/
@@ -48,4 +49,5 @@ Thumbs.db
 app/data/*.csv
 app/data/*.xlsx
 app/data/*.db
+app/data/reports/
 !app/data/.gitkeep
