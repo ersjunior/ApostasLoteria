@@ -121,7 +121,7 @@ st.markdown(
     Utilize o painel lateral para enviar os arquivos baixado ao sistema.
 
     ### 3️⃣ Selecione a loteria
-    Nas páginas de **Verificação**, **Forecast** e **Estatísticas**, escolha a modalidade desejada.
+    Nas páginas de **Verificação**, **Combinações Inéditas** e **Estatísticas**, escolha a modalidade desejada.
 
     ### 4️⃣ Explore as funcionalidades
     Analise dados históricos, gere jogos inéditos e simule cenários de apostas.

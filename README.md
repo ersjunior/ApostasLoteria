@@ -21,7 +21,7 @@ O **Loterias Analyzer** é uma aplicação **educacional e analítica**, desenvo
 O projeto oferece:
 
 - 🔍 Verificação de jogos históricos  
-- 🔮 Geração de combinações inéditas (forecast)  
+- 🔮 Geração de combinações inéditas (sorteio aleatório, sem ML)
 - 📊 Estatísticas interativas com gráficos  
 - 💰 Simulação de custos e probabilidades reais  
 - 📄 Exportação de relatórios e dados  
@@ -52,14 +52,17 @@ O projeto oferece:
 - Suporte a campos extras e múltiplos sorteios
 - Resultados exibidos em cards organizados
 
-### 🔮 Forecast (combinações inéditas)
-- Geração de jogos nunca sorteados
+### 🔮 Gerador de Combinações Inéditas
+- Sorteio aleatório uniforme de combinações nunca sorteadas
 - Respeita regras específicas de cada loteria
+- **Sem modelo preditivo** — não há machine learning em produção
 - Exportação em CSV
 
 ### 📊 Estatísticas Interativas
 - Frequência histórica das dezenas
-- Probabilidade empírica
+- Teste qui-quadrado de uniformidade (hot/cold é ruído)
+- Valor esperado e vantagem da casa
+- Probabilidade empírica e combinatória C(n,k) por modalidade
 - Top & Bottom dezenas (dinâmico)
 - Gráficos interativos com Plotly
 - Simulação de custos e probabilidades
@@ -105,9 +108,9 @@ Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo:
 
 ---
 
-### 4️⃣ Forecast
-- Vá até **🔮 Forecast**
-- Gere combinações inéditas
+### 4️⃣ Combinações Inéditas
+- Vá até **🔮 Combinações Inéditas**
+- Gere combinações inéditas por sorteio aleatório
 - Exporte os resultados em CSV
 
 ---
@@ -124,20 +127,18 @@ Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo:
 ├── api/                            # API REST (FastAPI)
 │   ├── routes/
 │   └── services/
+├── loterias_core/                  # Domínio puro (combinatória, estatística, EV)
+│   ├── combinatorics.py
+│   ├── expected_value.py
+│   ├── statistics.py
+│   └── generator.py
 ├── app/                            # Aplicação Streamlit
-│   ├── core/
-│   │   └── lotteries.py
-│   ├── data/                       # Bases XLSX (upload) e CSV da API
-│   │   ├── .gitkeep
-│   │   ├── Mega-Sena.xlsx          # um XLSX por loteria (gerado no upload)
-│   │   ├── Lotofácil.xlsx
-│   │   └── …
-│   ├── ml/
-│   │   └── forecast.py
+│   ├── combinations/
+│   │   └── generator.py
 │   ├── pages/
 │   │   ├── 1_📊_Estatísticas.py
 │   │   ├── 2_🎯_Verificação.py
-│   │   ├── 3_🔮_Forecast.py
+│   │   ├── 3_🔮_Combinações_Inéditas.py
 │   │   └── 4_👨‍💻_Feito por.py
 │   ├── services/
 │   │   ├── cache.py
@@ -157,7 +158,8 @@ Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo:
 │        └── Dockerfile.streamlit
 ├── docker-compose.yml              # Orquestra Streamlit + API
 ├── tests/                          # Testes automatizados
-|        ├── test_forecast.py
+|        ├── test_combinatorics.py
+|        ├── test_generator.py
 |        ├── test_statistics.py
 |        └── test_validator.py
 ├── pyproject.toml                  # Dependências e config (ruff, mypy, pytest)

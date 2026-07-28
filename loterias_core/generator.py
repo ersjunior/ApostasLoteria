@@ -1,7 +1,7 @@
 import random
 
 
-def generate_forecast_games(
+def generate_unique_combinations(
     df,
     n_games: int = 12,
     total_bolas: int = 6,
@@ -9,7 +9,9 @@ def generate_forecast_games(
     universo: int | None = None,
 ):
     """
-    Gera jogos inéditos que nunca foram sorteados
+    Gera combinações inéditas que nunca foram sorteadas.
+
+    Usa amostragem aleatória uniforme — não há modelo preditivo.
     """
 
     if universo is None:

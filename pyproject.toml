@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "apostas-loteria"
 version = "0.1.0"
-description = "Análise estatística, verificação de jogos e forecast para loterias brasileiras"
+description = "Análise estatística, verificação de jogos e gerador de combinações inéditas para loterias brasileiras"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

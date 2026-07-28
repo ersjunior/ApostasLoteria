@@ -8,8 +8,8 @@ if str(root_dir) not in sys.path:
 
 import streamlit as st
 
+from app.combinations.generator import generate_unique_combinations
 from app.core.lotteries import LOTTERIES
-from app.ml.forecast import generate_forecast_games
 from app.services.dataset import load_dataset
 from app.services.exporter import export_csv
 from app.ui.theme import game_card, page_title, section
@@ -18,7 +18,7 @@ from app.ui.theme_manager import apply_theme, init_theme
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
-st.set_page_config(page_title="Forecast de Jogos", layout="wide")
+st.set_page_config(page_title="Combinações Inéditas", layout="wide")
 
 init_theme()
 apply_theme()
@@ -38,7 +38,10 @@ def pastel_color(hex_color: str, alpha=0.15):
 # =========================
 # TÍTULO
 # =========================
-page_title("🔮 Forecast de Jogos", "Geração de combinações inéditas que nunca foram sorteadas")
+page_title(
+    "🔮 Gerador de Combinações Inéditas",
+    "Sorteio aleatório de combinações que ainda não apareceram no histórico — sem poder preditivo",
+)
 
 # =========================
 # SELETOR DE LOTERIA
@@ -46,8 +49,9 @@ page_title("🔮 Forecast de Jogos", "Geração de combinações inéditas que n
 section("🎲 Seleção da Loteria")
 st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
 st.info(
-    "⚠️ As combinações abaixo são geradas com base em regras estatísticas "
-    "e não representam garantia de prêmio."
+    "⚠️ As combinações abaixo são geradas por **sorteio aleatório uniforme**. "
+    "Não há modelo de machine learning nem capacidade de previsão — apenas combinações "
+    "inéditas em relação ao histórico carregado."
 )
 
 lottery_name = st.selectbox("Escolha a loteria", list(LOTTERIES.keys()))
@@ -64,7 +68,7 @@ st.markdown(
         border-radius:6px;
     ">
         <strong>{config["icon"]} {lottery_name}</strong><br>
-        Forecast com <b>{config["total_bolas"]} dezenas</b>.
+        Combinações com <b>{config["total_bolas"]} dezenas</b>.
     </div>
     """,
     unsafe_allow_html=True,
@@ -88,12 +92,12 @@ except (FileNotFoundError, ValueError) as e:
 # =========================
 # GERAÇÃO
 # =========================
-section("✨ Gerar Forecast")
+section("✨ Gerar Combinações")
 
 st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
 
 if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
-    games = generate_forecast_games(
+    games = generate_unique_combinations(
         df=df,
         n_games=10,
         universo=config["universo"],
@@ -131,5 +135,8 @@ if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
 
     st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
     st.download_button(
-        "📄 Baixar jogos em CSV", csv, f"forecast_{config['key']}.csv", mime="text/csv"
+        "📄 Baixar jogos em CSV",
+        csv,
+        f"combinacoes_ineditas_{config['key']}.csv",
+        mime="text/csv",
     )

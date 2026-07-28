@@ -4,7 +4,7 @@ import os
 
 import pandas as pd
 
-from loterias_core.generator import generate_forecast_games
+from loterias_core.generator import generate_unique_combinations
 from loterias_core.scraper import download_megasena_data
 from loterias_core.validator import check_game
 
@@ -40,7 +40,7 @@ def verify_game(numbers: list[int]) -> bool:
     return check_game(sorted(numbers), df)
 
 
-def forecast_games(n: int = 10):
-    """Gera jogos inéditos com base no histórico da Mega-Sena."""
+def generate_unique_combination_games(n: int = 10):
+    """Gera combinações inéditas com base no histórico da Mega-Sena."""
     df = load_dataset()
-    return generate_forecast_games(df, n_games=n, total_bolas=6, universo=60)
+    return generate_unique_combinations(df, n_games=n, total_bolas=6, universo=60)

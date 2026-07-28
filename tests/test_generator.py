@@ -1,6 +1,6 @@
 import pandas as pd
 
-from loterias_core.generator import generate_forecast_games
+from loterias_core.generator import generate_unique_combinations
 
 
 def mock_dataset():
@@ -16,7 +16,7 @@ def mock_dataset():
 
 def test_generate_returns_valid_games():
     df = mock_dataset()
-    games = generate_forecast_games(df, n_games=5, total_bolas=6, universo=60)
+    games = generate_unique_combinations(df, n_games=5, total_bolas=6, universo=60)
 
     assert isinstance(games, list)
     assert len(games) == 5

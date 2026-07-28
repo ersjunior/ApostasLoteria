@@ -73,7 +73,7 @@ O Streamlit **não** baixa dados automaticamente. É necessário carregar a base
 4. Navegue pelas páginas no menu lateral:
    - **📊 Estatísticas**
    - **🎯 Verificação**
-   - **🔮 Forecast** (combinações inéditas)
+   - **🔮 Combinações Inéditas** (sorteio aleatório, sem ML)
    - **👨‍💻 Feito por**
 
 ### Onde os dados ficam (Streamlit)
@@ -131,7 +131,7 @@ A API fica em `http://localhost:8000`.
 
 ### Primeira execução (API) ⚠️
 
-Antes de usar `/verify/` ou `/forecast/`, crie o dataset da Mega-Sena:
+Antes de usar `/verify/` ou `/combinations/`, crie o dataset da Mega-Sena:
 
 1. Acesse http://localhost:8000/docs
 2. Abra `POST /dataset/`
@@ -146,7 +146,7 @@ Para consultar metadados do CSV: `GET /dataset/`.
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `POST` | `/verify/` | Verifica se um jogo da Mega-Sena já foi sorteado (`{"numbers": [1, 5, 12, 23, 34, 56]}`) |
-| `GET` | `/forecast/?n=10` | Gera até 100 combinações inéditas da Mega-Sena |
+| `GET` | `/combinations/?n=10` | Gera até 100 combinações inéditas da Mega-Sena (sorteio aleatório) |
 | `GET` | `/dataset/` | Informações sobre o CSV carregado |
 | `POST` | `/dataset/` | Baixa e atualiza `app/data/megasena.csv` |
 
@@ -270,5 +270,5 @@ uvicorn api.main:app --reload --port 8001
 
 - **Streamlit:** bases em `app/data/*.xlsx` (upload manual, multi-loteria).
 - **API:** base em `app/data/megasena.csv` (download via `POST /dataset/`, Mega-Sena).
-- Forecast gera combinações **aleatórias inéditas** — não há modelo de machine learning em produção.
+- O gerador de combinações inéditas usa sorteio **aleatório uniforme** — não há modelo de machine learning em produção.
 - Projeto com finalidade **educacional**; sorteios são eventos aleatórios.
