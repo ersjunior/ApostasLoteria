@@ -1,6 +1,6 @@
 # ARCHITECTURE_NOTES — ApostasLoteria
 
-Documento gerado por inspeção estática do repositório (sem alteração de lógica de negócio).  
+Documento gerado por inspeção estática do repositório (sem alteração de lógica de negócio).
 Data de referência: julho/2026.
 
 ---

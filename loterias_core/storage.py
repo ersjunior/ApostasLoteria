@@ -6,10 +6,11 @@ import json
 import os
 import sqlite3
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 DEFAULT_DB_PATH = "app/data/loterias.db"
 
@@ -243,14 +244,18 @@ def save_draws_incremental(
             "SELECT last_concurso, total_records FROM lottery_metadata WHERE lottery_key = ?",
             (lottery_key,),
         ).fetchone()
-        last_concurso = int(meta["last_concurso"]) if meta and meta["last_concurso"] is not None else None
+        last_concurso = (
+            int(meta["last_concurso"]) if meta and meta["last_concurso"] is not None else None
+        )
 
         has_concurso = any(_extract_concurso(r) is not None for r in records)
         if not has_concurso:
             existing_count = int(meta["total_records"]) if meta else 0
             if len(records) <= existing_count:
                 return 0
-            draw_rows = [_row_to_draw_values(lottery_key, r, draw_index=i) for i, r in enumerate(records)]
+            draw_rows = [
+                _row_to_draw_values(lottery_key, r, draw_index=i) for i, r in enumerate(records)
+            ]
             total = _replace_draws(conn, lottery_key, draw_rows)
             last_concurso = _max_concurso(conn, lottery_key)
             _update_metadata(conn, lottery_key, total, last_concurso)

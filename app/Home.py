@@ -246,7 +246,9 @@ section("📂 Status das Bases")
 st.markdown("<div style='margin-top:25px'></div>", unsafe_allow_html=True)
 
 cache_status = get_lottery_cache_status()
-loaded_count = sum(1 for cfg in LOTTERIES.values() if cache_status.get(cfg["key"], {}).get("exists"))
+loaded_count = sum(
+    1 for cfg in LOTTERIES.values() if cache_status.get(cfg["key"], {}).get("exists")
+)
 
 if loaded_count == 0:
     st.warning(
@@ -267,7 +269,9 @@ for i in range(0, len(items), COLS_PER_ROW):
             if status.get("exists"):
                 last = status.get("last_concurso")
                 total = status.get("total_records", 0)
-                detail = f" — concurso {last}, {total} registros" if last else f" — {total} registros"
+                detail = (
+                    f" — concurso {last}, {total} registros" if last else f" — {total} registros"
+                )
                 st.success(f"✅ {name}{detail}")
             else:
                 st.warning(f"⚠️ {name}")

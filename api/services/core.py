@@ -49,7 +49,9 @@ def load_dataset() -> pd.DataFrame:
 
 def update_dataset(source: DataSource | str = DataSource.AUTO, *, incremental: bool = True):
     """Atualiza a Mega-Sena baixando da Caixa e persistindo incrementalmente."""
-    logger.info("Iniciando download da base Mega-Sena (source=%s, incremental=%s)", source, incremental)
+    logger.info(
+        "Iniciando download da base Mega-Sena (source=%s, incremental=%s)", source, incremental
+    )
     try:
         df_raw = download_lottery_data(MEGASENA_KEY, source=source)
     except ScraperError as exc:

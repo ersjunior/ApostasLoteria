@@ -11,7 +11,7 @@
 
 Uma plataforma **educacional e analítica** para estudo de loterias brasileiras, baseada em dados oficiais da Caixa Econômica Federal.
 
-> ⚠️ **Aviso:** Este projeto **não garante prêmios**. Todos os sorteios são eventos aleatórios.  
+> ⚠️ **Aviso:** Este projeto **não garante prêmios**. Todos os sorteios são eventos aleatórios.
 > Se você ou alguém próximo tem dificuldade com jogo compulsivo, busque apoio em [Jogadores Anônimos](https://jogadoresanonimos.com.br/).
 
 ---
@@ -22,11 +22,11 @@ O **Loterias Analyzer** é uma aplicação **educacional e analítica**, desenvo
 
 O projeto oferece:
 
-- 🔍 Verificação de jogos históricos  
+- 🔍 Verificação de jogos históricos
 - 🔮 Geração de combinações inéditas (sorteio aleatório, sem ML)
-- 📊 Estatísticas interativas com gráficos  
-- 💰 Simulação de custos e probabilidades reais  
-- 📄 Exportação de relatórios e dados  
+- 📊 Estatísticas interativas com gráficos
+- 💰 Simulação de custos e probabilidades reais
+- 📄 Exportação de relatórios e dados
 - 🌐 API REST (FastAPI) para Mega-Sena
 
 ---
@@ -374,8 +374,8 @@ Histórico de mudanças: [CHANGELOG.md](CHANGELOG.md).
 
 ## ⚠️ Aviso Legal e Jogo Responsável
 
-Este projeto é **estritamente educacional e analítico**.  
-Jogos de loteria são eventos **aleatórios**.  
+Este projeto é **estritamente educacional e analítico**.
+Jogos de loteria são eventos **aleatórios**.
 Nenhuma análise estatística garante prêmio.
 
 Se você ou alguém próximo tem dificuldade com **jogo compulsivo**, procure apoio gratuito em [Jogadores Anônimos](https://jogadoresanonimos.com.br/). Para apoio emocional imediato, ligue **188** (CVV — Centro de Valorização da Vida).
@@ -386,9 +386,9 @@ A interface Streamlit exibe uma nota de jogo responsável no rodapé de todas as
 
 ## 👨‍💻 Feito por
 
-**Eliezer Junior**  
-- 💼 LinkedIn: https://www.linkedin.com/in/eliezer-junior/  
-- 🐙 GitHub: https://github.com/eliezerjunior  
+**Eliezer Junior**
+- 💼 LinkedIn: https://www.linkedin.com/in/eliezer-junior/
+- 🐙 GitHub: https://github.com/eliezerjunior
 
 Especialista em Dados, Engenharia e Inteligência Artificial.
 

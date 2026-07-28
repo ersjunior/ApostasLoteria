@@ -254,7 +254,11 @@ def load_dataset(
             if "concurso" in df_raw.columns:
                 temp["concurso"] = df_raw["concurso"].values
             temp["draw_index"] = draw
-            all_rows.append(temp[["jogo"] + (["concurso"] if "concurso" in temp.columns else []) + ["draw_index"]])
+            all_rows.append(
+                temp[
+                    ["jogo"] + (["concurso"] if "concurso" in temp.columns else []) + ["draw_index"]
+                ]
+            )
 
         return pd.concat(all_rows, ignore_index=True)
 

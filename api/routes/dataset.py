@@ -7,7 +7,6 @@ from fastapi import APIRouter, HTTPException, Request
 
 from api.config import get_settings
 from api.limiter import limiter
-from api.services import core
 from api.services.core import get_dataset_status, load_dataset, update_dataset
 
 logger = logging.getLogger(__name__)

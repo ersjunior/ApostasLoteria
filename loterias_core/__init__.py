@@ -19,6 +19,9 @@ from loterias_core.dataset import (
     process_raw_dataset,
     save_dataset,
 )
+from loterias_core.expected_value import calculate_expected_value
+from loterias_core.generator import generate_unique_combinations
+from loterias_core.lotteries import LOTTERIES, LOTTERY_CONFIGS, LotteryConfig
 from loterias_core.repository import (
     ensure_database,
     get_cache_status,
@@ -28,9 +31,6 @@ from loterias_core.repository import (
     persist_lottery_dataframe,
     update_lottery_from_raw,
 )
-from loterias_core.expected_value import calculate_expected_value
-from loterias_core.generator import generate_unique_combinations
-from loterias_core.lotteries import LOTTERIES, LOTTERY_CONFIGS, LotteryConfig
 from loterias_core.schema import DatasetSchemaError, validate_dataset_schema
 from loterias_core.scraper import (
     DataSource,

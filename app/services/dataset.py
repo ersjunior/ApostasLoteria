@@ -12,9 +12,6 @@ from loterias_core.dataset import (
     persist_dataset,
 )
 from loterias_core.dataset import (
-    load_dataset as _load_dataset_from_xlsx,
-)
-from loterias_core.dataset import (
     save_dataset as _save_dataset,
 )
 from loterias_core.repository import get_cache_status, update_lottery_from_raw
