@@ -40,6 +40,12 @@ if filter_name != "Todas":
 
 rows = list_user_games(lottery_key_filter, limit=200)
 
+# Descarta resultados de verificação em lote quando o filtro de loteria muda,
+# evitando exibir análises que já não correspondem à listagem atual.
+if st.session_state.get("history_bulk_filter") != filter_name:
+    st.session_state.pop("history_bulk_results", None)
+    st.session_state["history_bulk_filter"] = filter_name
+
 section("📋 Jogos salvos")
 
 if not rows:
@@ -93,8 +99,111 @@ with col_export:
 with col_clear:
     if st.button("🗑️ Limpar histórico filtrado", use_container_width=True):
         removed = clear_user_games(lottery_key_filter)
+        st.session_state.pop("history_bulk_results", None)
         st.success(f"{removed} jogo(s) removido(s).")
         st.rerun()
+
+section("🔍 Verificar jogos salvos")
+
+st.caption(
+    "Confere, em lote, quais jogos salvos já foram sorteados — processados por ordem "
+    "de ID (crescente)."
+)
+st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
+
+max_verificaveis = min(100, len(rows))
+
+if max_verificaveis == 1:
+    qtd_verificar = 1
+    st.info("Há apenas **1 jogo** salvo — a verificação conferirá esse jogo.")
+else:
+    qtd_verificar = st.slider(
+        "Quantidade de jogos a verificar",
+        min_value=1,
+        max_value=max_verificaveis,
+        value=min(10, max_verificaveis),
+        key="history_verify_qtd",
+        help=(
+            f"Escolha livremente de 1 a {max_verificaveis} jogo(s). "
+            "Serão verificados os primeiros por ordem de ID."
+        ),
+    )
+
+_plural = "s" if qtd_verificar > 1 else ""
+if st.button(
+    f"🔍 Verificar {qtd_verificar} jogo{_plural}",
+    use_container_width=True,
+    key="history_bulk_verify_btn",
+):
+    ordenados = sorted(rows, key=lambda r: r["id"])[:qtd_verificar]
+    resultados: list[tuple[str, str, str, str]] = []
+    datasets: dict[str, object] = {}
+
+    for row in ordenados:
+        lk = row["lottery_key"]
+        titulo = f"#{row['id']} · {name_by_key.get(lk, lk)}"
+        dezenas_txt = ", ".join(str(n) for n in row["dezenas"])
+
+        if lk not in datasets:
+            try:
+                cfg = next(c for c in LOTTERIES.values() if c["key"] == lk)
+                datasets[lk] = load_dataset(
+                    lottery_key=cfg["key"],
+                    total_bolas=cfg["total_bolas"],
+                    extra_fields=cfg.get("extra_fields"),
+                    multiple_draws=cfg.get("multiple_draws", False),
+                    special_handler=cfg.get("special_handler"),
+                )
+            except (FileNotFoundError, ValueError, StopIteration) as exc:
+                datasets[lk] = exc
+
+        base = datasets[lk]
+        if isinstance(base, Exception):
+            resultados.append(("error", titulo, dezenas_txt, "Base indisponível"))
+            continue
+
+        try:
+            extras = row.get("extras") or None
+            found = check_game(row["dezenas"], base, extra_values=extras or None)
+            if found:
+                resultados.append(("success", titulo, dezenas_txt, "Já sorteado 🎉"))
+            else:
+                resultados.append(("warning", titulo, dezenas_txt, "Nunca sorteado 🔍"))
+        except (ValueError, KeyError):
+            resultados.append(("error", titulo, dezenas_txt, "Erro na verificação"))
+
+    st.session_state["history_bulk_results"] = resultados
+
+_bulk_results = st.session_state.get("history_bulk_results")
+if _bulk_results:
+    n_sorteados = sum(1 for r in _bulk_results if r[0] == "success")
+    n_ineditos = sum(1 for r in _bulk_results if r[0] == "warning")
+    n_erros = sum(1 for r in _bulk_results if r[0] == "error")
+
+    resumo = st.columns(3)
+    with resumo[0]:
+        st.metric("✅ Já sorteados", n_sorteados)
+    with resumo[1]:
+        st.metric("🔍 Nunca sorteados", n_ineditos)
+    with resumo[2]:
+        st.metric("⚠️ Com erro", n_erros)
+
+    st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
+
+    results_per_row = 5
+    for i in range(0, len(_bulk_results), results_per_row):
+        cols = st.columns(results_per_row)
+        for col, (status, titulo, dezenas_txt, msg) in zip(
+            cols, _bulk_results[i : i + results_per_row], strict=False
+        ):
+            with col:
+                corpo = f"**{titulo}**\n\n{dezenas_txt}\n\n{msg}"
+                if status == "success":
+                    st.success(corpo)
+                elif status == "warning":
+                    st.warning(corpo)
+                else:
+                    st.error(corpo)
 
 section("⚙️ Ações por jogo")
 
@@ -127,6 +236,7 @@ with c1:
 with c2:
     if st.button("🗑️ Apagar este jogo", use_container_width=True):
         if delete_user_game(selected_id):
+            st.session_state.pop("history_bulk_results", None)
             st.success(f"Jogo #{selected_id} removido.")
             st.rerun()
         else:

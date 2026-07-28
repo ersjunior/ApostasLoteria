@@ -7,6 +7,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+### Added
+
+- Página **📜 Histórico**: nova seção **"🔍 Verificar jogos salvos"** com verificação **em lote**. Um slider **"Quantidade de jogos a verificar"** (1 a `min(100, nº de jogos)`, padrão 10) permite conferir livremente de 1 a 100 jogos por ordem de **ID crescente**; o resultado traz métricas de resumo (já sorteados / nunca sorteados / com erro) e cards de status. Datasets são carregados uma única vez por modalidade e bases indisponíveis não interrompem a página. A verificação individual por ID (**"🔍 Verificar novamente"**) foi mantida em "Ações por jogo".
+
 ### Changed
 
 - Página **🔮 Combinações Inéditas**: quantidade de jogos agora é configurável por slider **"Quantidade de jogos"** (1–100, padrão 10), com rótulo do botão dinâmico — antes era fixo em 10 jogos.

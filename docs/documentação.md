@@ -744,7 +744,8 @@ Gerencia o histórico local (SQLite, sem conta de usuário).
 - **Seção "🔎 Filtro"** — `selectbox` **"Loteria"** com opção "Todas" + todas as modalidades.
 - **Seção "📋 Jogos salvos"** — `st.dataframe` com colunas ID, Data, Loteria, Dezenas, Extras, Origem e Nota (limite de 200 jogos, mais recentes primeiro). Se vazio, informa como salvar jogos.
 - **Botões** — **"⬇️ Baixar histórico (CSV)"** (via `export_history_csv`) e **"🗑️ Limpar histórico filtrado"**.
-- **Seção "⚙️ Ações por jogo"** — `selectbox` de ID e dois botões: **"🔍 Verificar novamente"** (recarrega o dataset e roda `check_game`) e **"🗑️ Apagar este jogo"** (`delete_user_game`).
+- **Seção "🔍 Verificar jogos salvos"** — verificação **em lote** com slider **"Quantidade de jogos a verificar"** (1 a `min(100, nº de jogos)`, padrão 10 — ou o total disponível, se menor). Ao clicar em **"🔍 Verificar {n} jogo(s)"** (rótulo dinâmico), os jogos são ordenados **por ID crescente**, os `n` primeiros são conferidos com `check_game` (datasets carregados uma única vez por modalidade e reaproveitados) e o resultado é apresentado com três métricas de resumo (**✅ Já sorteados**, **🔍 Nunca sorteados**, **⚠️ Com erro**) seguidas de cards de status em grade de 5 colunas. Bases indisponíveis não interrompem a página: o jogo é marcado como "Base indisponível". Os resultados ficam no `session_state` e são invalidados ao trocar o filtro de loteria ou remover jogos.
+- **Seção "⚙️ Ações por jogo"** — `selectbox` de ID e dois botões: **"🔍 Verificar novamente"** (recarrega o dataset e roda `check_game` para um jogo específico) e **"🗑️ Apagar este jogo"** (`delete_user_game`).
 - Rodapé de jogo responsável.
 
 ### 12.10 Camada de serviços da UI — `app/services/`
