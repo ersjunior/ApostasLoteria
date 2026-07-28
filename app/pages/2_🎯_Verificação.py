@@ -8,51 +8,26 @@ root_dir = Path(__file__).parent.parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
-from app.core.lotteries import LOTTERIES
 from app.services.dataset import load_dataset
+from app.services.user_history import SOURCE_VERIFY, add_user_games
 from app.services.validator import check_game
-from app.ui.theme import page_title, responsible_gaming_footer, section
-from app.ui.theme_manager import apply_theme, init_theme
+from app.ui.shell import render_app_chrome
+from app.ui.theme import lottery_badge, page_title, responsible_gaming_footer, section
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
 st.set_page_config(page_title="Verificação de Jogos", layout="wide")
 
-init_theme()
-apply_theme()
+lottery_name, config = render_app_chrome(show_lottery=True)
 
-
-# =========================
-# TÍTULO
-# =========================
 page_title(
     "🎯 Verificação de Jogos", "Confira se seus jogos já foram sorteados em diferentes loterias"
 )
-
-# =========================
-# SELETOR DE LOTERIA
-# =========================
-section("🎲 Seleção da Loteria")
-
-lottery_name = st.selectbox("Escolha a loteria", list(LOTTERIES.keys()))
-
-config = LOTTERIES[lottery_name]
-
-st.markdown(
-    f"""
-    <div style="
-        margin-top:10px;
-        padding:10px 15px;
-        border-left:5px solid {config["color"]};
-        background-color: rgba(255,255,255,0.02);
-        border-radius:6px;
-    ">
-        <strong>{config["icon"]} {lottery_name}</strong><br>
-        Insira jogos com <b>{config["total_bolas"]} dezenas</b>.
-    </div>
-    """,
-    unsafe_allow_html=True,
+lottery_badge(
+    lottery_name,
+    config,
+    detail=f"Insira jogos com <b>{config['total_bolas']} dezenas</b>.",
 )
 
 # =========================
@@ -69,33 +44,7 @@ try:
 except (FileNotFoundError, ValueError) as e:
     st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
     st.error(f"⚠️ Erro ao carregar a base da **{lottery_name}**\n\n{str(e)}")
-    st.write("DEBUG special_handler:", config.get("special_handler"))
     st.stop()
-
-# =========================
-# DEBUG — VALIDAÇÃO DO DATASET
-# =========================
-# st.subheader("🧪 Debug do Dataset (temporário)")
-#
-# st.write(type(df))
-# st.write(df.head())
-# st.write("Total de jogos:", len(df))
-#
-# st.write("Total de jogos carregados:", len(df))
-# st.write("Colunas do DataFrame:", df.columns.tolist())
-#
-## Mostrar alguns jogos reais
-# st.write("Exemplo de jogos reais do dataset:")
-# st.write(df["jogo"].head(10))
-#
-## Teste manual de um jogo específico
-# test_game = [6, 29, 33, 38, 53, 56]
-# test_game = sorted(test_game)
-#
-# matches = df[df["jogo"].apply(lambda x: x == test_game)]
-#
-# st.write("Teste manual do jogo:", test_game)
-# st.write("Ocorrências encontradas:", len(matches))
 
 
 # =========================
@@ -103,28 +52,32 @@ except (FileNotFoundError, ValueError) as e:
 # =========================
 section("📝 Inserção dos Jogos")
 
-TOTAL_GAMES = 3
 COLS_PER_ROW = 3
 
 st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
 
+n_games = st.slider(
+    "Quantidade de jogos",
+    min_value=1,
+    max_value=20,
+    value=5,
+    key="verify_n_games",
+)
+
 games = []
 game_index = 0
 
-for _ in range(TOTAL_GAMES // COLS_PER_ROW):
+for _row in range((n_games + COLS_PER_ROW - 1) // COLS_PER_ROW):
     cols = st.columns(COLS_PER_ROW)
 
     st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
 
     for col in cols:
-        if game_index >= TOTAL_GAMES:
-            continue
+        if game_index >= n_games:
+            break
 
         jogo_numero = game_index + 1
 
-        # =========================
-        # DEZENAS PRINCIPAIS
-        # =========================
         dezenas_input = col.text_input(
             f"{config['icon']} Jogo {jogo_numero}",
             placeholder=config.get(
@@ -135,11 +88,10 @@ for _ in range(TOTAL_GAMES // COLS_PER_ROW):
 
         extras_inputs = {}
 
-        # =========================
-        # CAMPOS EXTRAS (TREVO)
-        # =========================
         if "extra_fields" in config:
             for field, qtd in config["extra_fields"].items():
+                if field.endswith("_universo"):
+                    continue
                 extra = col.text_input(
                     f"{config['icon']} {field.capitalize()} ({qtd})",
                     placeholder=f"{qtd} números separados por vírgula",
@@ -149,9 +101,6 @@ for _ in range(TOTAL_GAMES // COLS_PER_ROW):
                 if extra:
                     extras_inputs[field] = [int(x.strip()) for x in extra.split(",")]
 
-        # =========================
-        # SALVAR JOGO
-        # =========================
         if dezenas_input:
             games.append(
                 {
@@ -169,17 +118,20 @@ for _ in range(TOTAL_GAMES // COLS_PER_ROW):
 # =========================
 st.markdown("<div style='margin-top:25px'></div>", unsafe_allow_html=True)
 
+_results_key = "verify_last_results"
+_valid_key = "verify_last_valid"
+_lottery_key_state = "verify_last_lottery_key"
+
+if st.session_state.get(_lottery_key_state) != config["key"]:
+    st.session_state.pop(_results_key, None)
+    st.session_state.pop(_valid_key, None)
+    st.session_state[_lottery_key_state] = config["key"]
+
 if st.button(f"{config['icon']} Verificar Jogos"):
-    section("📋 Resultados")
-
-    st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
-
     RESULTS_PER_ROW = 5
     results = []
+    valid_games = []
 
-    # =========================
-    # PROCESSAR JOGOS
-    # =========================
     for game in games:
         idx = game["index"]
 
@@ -211,12 +163,22 @@ if st.button(f"{config['icon']} Verificar Jogos"):
             else:
                 results.append(("warning", f"{config['icon']} Jogo {idx}", "Nunca foi sorteado 🔍"))
 
+            valid_games.append({"dezenas": dezenas, "extras": game["extras"]})
+
         except ValueError:
             results.append(("error", f"{config['icon']} Jogo {idx}", "Formato inválido"))
 
-    # =========================
-    # RENDERIZAÇÃO EM GRID
-    # =========================
+    st.session_state[_results_key] = results
+    st.session_state[_valid_key] = valid_games
+
+results = st.session_state.get(_results_key) or []
+valid_games = st.session_state.get(_valid_key) or []
+
+if results:
+    section("📋 Resultados")
+    st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
+
+    RESULTS_PER_ROW = 5
     for i in range(0, len(results), RESULTS_PER_ROW):
         cols = st.columns(RESULTS_PER_ROW)
 
@@ -230,5 +192,19 @@ if st.button(f"{config['icon']} Verificar Jogos"):
                     st.warning(f"**{title}**\n\n{message}")
                 else:
                     st.error(f"**{title}**\n\n{message}")
+
+    if valid_games:
+        st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
+        if st.button("💾 Salvar jogos válidos no histórico", key=f"save_verify_{config['key']}"):
+            try:
+                ids = add_user_games(
+                    config["key"],
+                    valid_games,
+                    source=SOURCE_VERIFY,
+                    note=f"Verificação — {lottery_name}",
+                )
+                st.success(f"{len(ids)} jogo(s) salvos no histórico local.")
+            except Exception as exc:
+                st.error(f"Não foi possível salvar no histórico.\n\n{exc}")
 
 responsible_gaming_footer()

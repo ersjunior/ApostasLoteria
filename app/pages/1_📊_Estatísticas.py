@@ -10,11 +10,18 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from app.core.lotteries import LOTTERIES
 from app.services.dataset import load_dataset
-from app.services.statistics import chi_square_uniformity_test, empirical_probability, frequency
-from app.ui.theme import metric_card, page_title, responsible_gaming_footer, section
-from app.ui.theme_manager import apply_theme, init_theme
+from app.services.report import generate_statistics_pdf
+from app.services.statistics import (
+    chi_square_uniformity_test,
+    empirical_probability,
+    extra_field_frequency,
+    frequency,
+    frequency_by_draw,
+    frequency_by_position,
+)
+from app.ui.shell import render_app_chrome
+from app.ui.theme import lottery_badge, metric_card, page_title, responsible_gaming_footer, section
 from loterias_core.combinatorics import get_lottery_config_from_dict, win_probability
 from loterias_core.expected_value import calculate_expected_value
 
@@ -23,26 +30,16 @@ from loterias_core.expected_value import calculate_expected_value
 # =========================
 st.set_page_config(page_title="Estatísticas das Loterias", layout="wide")
 
-
-init_theme()
-apply_theme()
+lottery_name, config = render_app_chrome(show_lottery=True)
+lottery_cfg = get_lottery_config_from_dict(config)
 
 
 def _format_brl(value: float) -> str:
     return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-# =========================
-# SELETOR DE LOTERIA
-# =========================
 page_title("📊 Estatísticas das Loterias", "Análise histórica e estatística dos sorteios")
-
-section("🎲 Seleção da Loteria")
-
-lottery_name = st.selectbox("Escolha a loteria", list(LOTTERIES.keys()))
-
-config = LOTTERIES[lottery_name]
-lottery_cfg = get_lottery_config_from_dict(config)
+lottery_badge(lottery_name, config)
 
 
 # =========================
@@ -66,9 +63,8 @@ except (FileNotFoundError, ValueError) as e:
 # =========================
 if "jogo" not in df.columns or df["jogo"].dropna().empty:
     st.warning(
-        "⚠️ Esta loteria possui uma estrutura especial.\n\n"
-        "As estatísticas de frequência clássicas não se aplicam.\n"
-        "Em breve, análises específicas serão adicionadas."
+        "⚠️ Não há coluna `jogo` utilizável nesta base.\n\n"
+        "Faça upload novamente do XLSX oficial da modalidade selecionada."
     )
     st.stop()
 
@@ -310,6 +306,147 @@ if top_n > 0:
 section("🎯 Probabilidade Empírica")
 
 st.dataframe(prob_df.style.format({"Probabilidade": "{:.4%}"}), use_container_width=True)
+
+
+# =========================
+# ANÁLISES ESPECÍFICAS POR MODALIDADE
+# =========================
+extra_fields = config.get("extra_fields") or {}
+show_trevos = "trevos" in extra_fields and extra_field_frequency(df, "trevos").size > 0
+show_draws = bool(config.get("multiple_draws")) and "draw_index" in df.columns
+show_supersete = config.get("special_handler") == "supersete"
+time_field = next(
+    (f for f in extra_fields if f != "trevos" and not str(f).endswith("_universo")),
+    None,
+)
+show_time = bool(time_field) and extra_field_frequency(df, time_field).size > 0
+
+if show_trevos or show_draws or show_supersete or show_time:
+    section("🧩 Análises Específicas desta Modalidade")
+    st.caption(
+        "Complementos além da frequência clássica das dezenas. "
+        "Histórico ≠ previsão: cada sorteio continua independente."
+    )
+    st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
+
+    if show_trevos:
+        trevo_freq = extra_field_frequency(df, "trevos")
+        if not trevo_freq.empty:
+            trevo_df = trevo_freq.reset_index()
+            trevo_df.columns = ["Trevo", "Frequência"]
+            fig_trevos = px.bar(
+                trevo_df,
+                x="Trevo",
+                y="Frequência",
+                title=f"Frequência dos trevos — {lottery_name}",
+                color="Frequência",
+                color_continuous_scale=[[0, config["color"]], [1, "#111827"]],
+            )
+            fig_trevos.update_layout(height=400, coloraxis_showscale=False)
+            st.plotly_chart(fig_trevos, use_container_width=True)
+
+    if show_draws:
+        by_draw = frequency_by_draw(df, total_bolas=config["total_bolas"])
+        if by_draw:
+            cols = st.columns(len(by_draw))
+            for col, (draw_id, series) in zip(cols, sorted(by_draw.items()), strict=False):
+                draw_df = series.reset_index()
+                draw_df.columns = ["Dezena", "Frequência"]
+                fig_draw = px.bar(
+                    draw_df,
+                    x="Dezena",
+                    y="Frequência",
+                    title=f"Sorteio {draw_id}",
+                    color_discrete_sequence=[config["color"]],
+                )
+                fig_draw.update_layout(height=380)
+                with col:
+                    st.plotly_chart(fig_draw, use_container_width=True)
+
+    if show_supersete:
+        pos_df = frequency_by_position(df, n_positions=config["total_bolas"])
+        if not pos_df.empty:
+            pivot = pos_df.pivot(index="digito", columns="coluna", values="frequencia").fillna(0)
+            fig_heat = px.imshow(
+                pivot,
+                labels={"x": "Coluna", "y": "Dígito", "color": "Frequência"},
+                title=f"Frequência por coluna — {lottery_name}",
+                aspect="auto",
+                color_continuous_scale="Blues",
+            )
+            fig_heat.update_layout(height=420)
+            st.plotly_chart(fig_heat, use_container_width=True)
+
+    if show_time and time_field:
+        time_freq = extra_field_frequency(df, time_field)
+        top_n = min(15, len(time_freq))
+        top = time_freq.head(top_n).sort_values(ascending=True)
+        time_df = top.reset_index()
+        time_df.columns = ["Time", "Frequência"]
+        fig_time = px.bar(
+            time_df,
+            x="Frequência",
+            y="Time",
+            orientation="h",
+            title=f"Top {top_n} — Time do Coração",
+            color="Frequência",
+            color_continuous_scale=[[0, config["color"]], [1, "#111827"]],
+        )
+        fig_time.update_layout(height=max(360, top_n * 28), coloraxis_showscale=False)
+        st.plotly_chart(fig_time, use_container_width=True)
+
+
+# =========================
+# EXPORTAR RELATÓRIO PDF
+# =========================
+section("📥 Exportar Relatório")
+
+st.markdown(
+    "Gera um PDF com resumo (KPIs), ranking das dezenas e probabilidade empírica. "
+    "O gráfico de frequência entra quando Kaleido/Chrome está disponível; "
+    "caso contrário o relatório segue só com tabelas."
+)
+st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
+
+_pdf_state_key = "stats_pdf_bytes"
+_pdf_lottery_key = "stats_pdf_lottery_key"
+
+if st.session_state.get(_pdf_lottery_key) != config["key"]:
+    st.session_state.pop(_pdf_state_key, None)
+    st.session_state[_pdf_lottery_key] = config["key"]
+
+if freq.empty:
+    st.info("Não há dados de frequência suficientes para gerar o relatório PDF.")
+else:
+    col_gerar, col_baixar = st.columns([1, 1])
+
+    with col_gerar:
+        if st.button("📄 Gerar PDF", key=f"gerar_pdf_{config['key']}", use_container_width=True):
+            try:
+                with st.spinner("Gerando relatório PDF..."):
+                    buffer = generate_statistics_pdf(
+                        df,
+                        total_bolas=config["total_bolas"],
+                        titulo=f"Relatório Estatístico — {lottery_name}",
+                    )
+                    st.session_state[_pdf_state_key] = buffer.getvalue()
+                st.success("Relatório pronto. Use o botão ao lado para baixar.")
+            except Exception as exc:
+                st.session_state.pop(_pdf_state_key, None)
+                st.error(f"Não foi possível gerar o PDF.\n\n{exc}")
+
+    with col_baixar:
+        if st.session_state.get(_pdf_state_key):
+            st.download_button(
+                "⬇️ Baixar relatório PDF",
+                data=st.session_state[_pdf_state_key],
+                file_name=f"relatorio_{config['key']}.pdf",
+                mime="application/pdf",
+                key=f"download_pdf_{config['key']}",
+                use_container_width=True,
+            )
+        else:
+            st.caption("Gere o PDF primeiro para habilitar o download.")
 
 
 # =========================

@@ -12,8 +12,9 @@ if str(root_dir) not in sys.path:
 from app.config import configure_runtime
 from app.core.lotteries import LOTTERIES
 from app.services.dataset import get_lottery_cache_status, persist_dataset
+from app.ui.lottery_selector import lottery_selector
+from app.ui.shell import render_app_chrome
 from app.ui.theme import card, page_title, responsible_gaming_footer, section
-from app.ui.theme_manager import apply_theme, init_theme
 from loterias_core.schema import DatasetSchemaError
 
 configure_runtime()
@@ -23,8 +24,7 @@ configure_runtime()
 # =========================
 st.set_page_config(page_title="🍀 Loterias Analyzer", layout="wide")
 
-init_theme()
-apply_theme()
+render_app_chrome(show_lottery=True)
 
 # =========================
 # HERO / HEADER
@@ -80,36 +80,37 @@ with col4:
 # =========================
 section("🎲 Loterias suportadas")
 
+n_modalidades = len(LOTTERIES)
 st.markdown(
-    """
-    O sistema foi projetado para funcionar de forma **genérica**, suportando diferentes modalidades
-    de loteria com regras próprias.\n
-    ***Apenas Mega-Sena e Lotofácil atualmente, mas extensível para outros tipos de loterias.***
+    f"""
+    O sistema funciona de forma **genérica** para **{n_modalidades} modalidades**,
+    cada uma com regras, universo e preços próprios.
     """
 )
 
+
+def _lottery_card_description(cfg: dict) -> str:
+    parts = [f"{cfg['total_bolas']} dezenas · universo {cfg['universo']}"]
+    if cfg.get("multiple_draws"):
+        parts.append("2 sorteios por concurso")
+    if cfg.get("extra_fields"):
+        playable = [k for k in cfg["extra_fields"] if not k.endswith("_universo")]
+        if playable:
+            parts.append(", ".join(playable))
+    elif "trevo" in (cfg.get("placeholder") or "").lower():
+        parts.append("2 trevos")
+    return " · ".join(parts)
+
+
 st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
-c1, c2, c3 = st.columns(3)
+LOTTERY_COLS = 3
+lottery_items = list(LOTTERIES.items())
 
-with c1:
-    card(
-        "Mega-Sena",
-        "A mais popular loteria do Brasil, com análise completa de estatísticas, verificação "
-        "e geração de jogos inéditos.",
-    )
-
-with c2:
-    card(
-        "Lotofácil",
-        "Análises específicas para apostas com 15 a 20 dezenas, incluindo simulações de custo "
-        "e probabilidade.",
-    )
-
-with c3:
-    card(
-        "Extensível",
-        "Arquitetura preparada para inclusão de novas loterias, como Quina, Lotomania e outras.",
-    )
+for i in range(0, len(lottery_items), LOTTERY_COLS):
+    cols = st.columns(LOTTERY_COLS)
+    for col, (name, cfg) in zip(cols, lottery_items[i : i + LOTTERY_COLS], strict=False):
+        with col:
+            card(f"{cfg['icon']} {name}", _lottery_card_description(cfg))
 
 # =========================
 # COMO UTILIZAR
@@ -124,8 +125,9 @@ st.markdown(
     ### 2️⃣ Faça o upload dos arquivos
     Utilize o painel lateral para enviar os arquivos baixado ao sistema.
 
-    ### 3️⃣ Selecione a loteria
-    Nas páginas de **Verificação**, **Combinações Inéditas** e **Estatísticas**, escolha a modalidade desejada.
+    ### 3️⃣ Selecione a loteria e o tema
+    No **painel lateral (Controles)**, escolha a modalidade e o tema claro/escuro —
+    a preferência permanece ao navegar entre as páginas.
 
     ### 4️⃣ Explore as funcionalidades
     Analise dados históricos, gere jogos inéditos e simule cenários de apostas.
@@ -166,10 +168,11 @@ st.info(
 st.sidebar.markdown("## 📤 Upload Manual do XLSX")
 
 # 🔹 SELETOR APENAS AQUI
-loteria_upload = st.sidebar.selectbox(
+loteria_upload, _ = lottery_selector(
     "🎰 Loteria do arquivo",
-    list(LOTTERIES.keys()),
+    key="upload_lottery",
     help="Selecione a loteria correspondente ao arquivo XLSX",
+    sidebar=True,
 )
 
 st.sidebar.markdown(
@@ -275,7 +278,5 @@ for i in range(0, len(items), COLS_PER_ROW):
                 st.success(f"✅ {name}{detail}")
             else:
                 st.warning(f"⚠️ {name}")
-
-st.cache_data.clear()
 
 responsible_gaming_footer()

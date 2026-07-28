@@ -43,6 +43,8 @@ Seja respeitoso e construtivo. Este é um projeto **educacional** sobre loterias
    pip install -e ".[dev,api]"
    ```
 
+   Equivalente parcial via atalhos: `requirements.txt`, `requirements-api.txt`, `requirements-dev.txt`.
+
 4. **Configure variáveis de ambiente (opcional)**
 
    ```bash
@@ -74,7 +76,15 @@ uvicorn api.main:app --reload
 ```
 
 - Swagger: http://localhost:8000/docs
-- Health check: http://localhost:8000/health
+- Health: http://localhost:8000/health
+- Catálogo: http://localhost:8000/lotteries
+- Rotas canônicas: `/lotteries/{lottery_key}/…` (aliases Mega-Sena em `/verify/`, `/combinations/`, etc.)
+
+Smoke rápido (com a API no ar):
+
+```bash
+python scripts/smoke_api.py
+```
 
 ### Docker Compose
 
@@ -98,8 +108,11 @@ ruff check .
 # Formatação (verificar sem alterar)
 ruff format --check .
 
-# Testes com cobertura (mínimo 60%)
+# Testes
 pytest
+
+# Testes com cobertura (mínimo 60% — requer pytest-cov do extra [dev])
+pytest --cov --cov-report=term-missing
 
 # Type-check gradual
 mypy app api loterias_core
@@ -113,15 +126,16 @@ ruff format .
 
 ## Estrutura relevante para contribuições
 
-| Pasta / módulo      | Responsabilidade                                      |
-|---------------------|-------------------------------------------------------|
-| `loterias_core/`    | Domínio puro (combinatória, estatística, validação)   |
-| `app/`              | Interface Streamlit                                   |
-| `api/`              | API REST FastAPI                                      |
-| `tests/`            | Testes automatizados                                  |
-| `docs/`             | Documentação complementar                             |
+| Pasta / módulo | Responsabilidade |
+|----------------|------------------|
+| `loterias_core/` | Domínio puro (catálogo, SQLite, estatística, gerador, scraper) |
+| `app/` | Interface Streamlit (`Home.py`, `pages/`, `ui/shell.py`, services) |
+| `api/` | API REST FastAPI multi-loteria |
+| `scripts/` | Utilitários (ex.: `smoke_api.py`) |
+| `tests/` | Testes automatizados |
+| `docs/` | COMO_EXECUTAR, ARCHITECTURE_NOTES |
 
-Regra geral: lógica de negócio nova deve ir em `loterias_core/`; `app/` e `api/` consomem esse módulo.
+Regra geral: lógica de negócio nova deve ir em `loterias_core/`; `app/` e `api/` consomem esse módulo. Persistência operacional é **SQLite** (`LOTTERIAS_DB_PATH`), não XLSX/CSV por loteria.
 
 ## Padrão de commit
 

@@ -15,12 +15,30 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Metadados de cache expostos em `GET /health` (`database`, `lotteries`) e na UI (Home — Status das Bases).
 - Preparação para **Streamlit Community Cloud**: `.streamlit/secrets.toml.example`, `app/config.py` e seção Deploy no README.
 - Testes de persistência SQLite e cache incremental (`tests/test_storage.py`).
+- Exportação de relatório estatístico **PDF** na página Estatísticas (Gerar → Baixar).
+- **Histórico de jogos do usuário** (tabela `user_games` no SQLite local): salvar em Verificação/Combinações, página **📜 Histórico**.
+- Smoke live da API: `scripts/smoke_api.py` + job `api-smoke` no workflow Docker (container + `GET /health` / `GET /lotteries`).
+- Análises específicas na página Estatísticas (+Milionária/trevos, Dupla Sena/sorteios, Super Sete/colunas, Timemania/Time do Coração) via `extra_field_frequency`, `frequency_by_draw` e `frequency_by_position` em `loterias_core.statistics`.
+- Sidebar global (`app/ui/shell.py`): seletor de loteria e tema claro/escuro compartilhados entre as páginas Streamlit.
 
 ### Changed
 
 - `persist_dataset()` e `update_dataset()` gravam no SQLite; API deixa de usar `megasena.csv`.
 - Docker Compose: `LOTTERIAS_DB_PATH` e volume persistente para `loterias.db`.
 - Páginas Streamlit carregam dados por `lottery_key` em vez de `file_path` XLSX.
+- Ingestão de XLSX: `process_raw_dataset` processa DataFrame em memória (`build_dataset_from_dataframe`); sem staging Excel nem leitura duplicada em `load_dataset`.
+- Cobertura pytest deixa de ser `addopts` obrigatório; use `pytest --cov` (CI e local com `[dev]`). Limiar em `[tool.coverage.report] fail_under = 60`.
+- Atalho `requirements-dev.txt` (`-e ".[dev]"`).
+- Componentes de UI (`card`, `status_message`, métricas) respeitam o tema ativo; CSS de sidebar/inputs no modo claro.
+- Documentação alinhada ao estado atual: README, `docs/COMO_EXECUTAR.md`, `docs/ARCHITECTURE_NOTES.md`, `docs/README.md` e `.env.example` (API multi-loteria, SQLite, shell/tema, smoke).
+
+### Fixed
+
+- Imagem Docker Streamlit passa a incluir `.streamlit/config.toml` (tema/server); `secrets.toml` permanece fora do build via `.dockerignore`.
+- Relatório PDF nas Estatísticas: geração continua com tabelas se Kaleido/Chrome estiver ausente (ex.: Docker slim).
+- Removida leitura duplicada de Excel no caminho padrão de `load_dataset` e o round-trip `to_excel`/`read_excel` do upload.
+- `pytest` local sem `pytest-cov` não falha mais por flags `--cov` injetadas no `addopts`.
+- Link GitHub residual `eliezerjunior` no README alinhado a `ersjunior` (mesmo usuário da página Feito por / CI); identidade centralizada em `app/author.py`.
 
 ### Added (anterior)
 

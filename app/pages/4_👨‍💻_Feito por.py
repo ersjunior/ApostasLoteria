@@ -9,22 +9,16 @@ if str(root_dir) not in sys.path:
 import requests
 import streamlit as st
 
+from app.author import DISPLAY_NAME, GITHUB_URL, GITHUB_USER, LINKEDIN_URL
+from app.ui.shell import render_app_chrome
 from app.ui.theme import card, page_title, responsible_gaming_footer, section
-from app.ui.theme_manager import apply_theme, init_theme
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
 st.set_page_config(page_title="Feito por", layout="wide")
 
-init_theme()
-apply_theme()
-
-# =========================
-# CONFIGURAÇÃO
-# =========================
-GITHUB_USER = "ersjunior"  # ajuste se necessário
-LINKEDIN_URL = "https://www.linkedin.com/in/eliezer-junior/"
+render_app_chrome(show_lottery=False)
 
 # =========================
 # TÍTULO
@@ -37,8 +31,8 @@ page_title("👨‍💻 Feito por", "Quem está por trás deste projeto")
 section("👋 Sobre mim")
 
 st.markdown(
-    """
-    Sou **Eliezer Junior**, profissional de dados com forte atuação em:
+    f"""
+    Sou **{DISPLAY_NAME}**, profissional de dados com forte atuação em:
 
     - 📊 **Engenharia de Dados**
     - 🧠 **Inteligência Artificial**
@@ -63,7 +57,7 @@ with col1:
         "🐙 GitHub",
         "Projetos, códigos e estudos técnicos",
     )
-    st.link_button("Acessar GitHub", f"https://github.com/{GITHUB_USER}", use_container_width=True)
+    st.link_button("Acessar GitHub", GITHUB_URL, use_container_width=True)
 
 with col2:
     card(

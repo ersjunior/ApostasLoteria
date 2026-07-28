@@ -1,9 +1,13 @@
+from __future__ import annotations
+
+from typing import Any
+
 import streamlit as st
 
 from app.ui.theme_manager import get_theme
 
 # =========================
-# CORES DO PROJETO
+# CORES DO PROJETO (fallback / status)
 # =========================
 PRIMARY_COLOR = "#1f77b4"
 SUCCESS_COLOR = "#2ecc71"
@@ -31,7 +35,7 @@ def page_title(title: str, subtitle: str | None = None):
     if subtitle:
         st.markdown(
             f"""
-            <p style="color:#888; margin-top: 0;">
+            <p style="color:{theme["muted"]}; margin-top: 0;">
                 {subtitle}
             </p>
             """,
@@ -56,6 +60,31 @@ def section(title: str):
     )
 
 
+def lottery_badge(name: str, config: dict[str, Any], detail: str | None = None) -> None:
+    """Badge compacto da modalidade selecionada na sidebar."""
+    theme = get_theme()
+    accent = config.get("color") or theme["primary"]
+    icon = config.get("icon", "🎲")
+    body = detail or f"{config.get('total_bolas', '?')} dezenas · universo {config.get('universo', '?')}"
+    st.markdown(
+        f"""
+        <div style="
+            margin: 8px 0 16px 0;
+            padding: 10px 15px;
+            border-left: 5px solid {accent};
+            background-color: {theme["card"]};
+            border-radius: 6px;
+            border: 1px solid {theme["secondary"]};
+            border-left-width: 5px;
+        ">
+            <strong>{icon} {name}</strong><br>
+            <span style="color:{theme["muted"]}; font-size:14px;">{body}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def metric_card(label: str, value: str, icon: str):
     theme = get_theme()
 
@@ -66,10 +95,11 @@ def metric_card(label: str, value: str, icon: str):
             padding:20px;
             border-radius:12px;
             text-align:center;
+            border: 1px solid {theme["secondary"]};
         ">
             <div style="font-size:28px">{icon}</div>
-            <div style="font-size:14px; color:#888">{label}</div>
-            <div style="font-size:24px; font-weight:bold">{value}</div>
+            <div style="font-size:14px; color:{theme["muted"]};">{label}</div>
+            <div style="font-size:24px; font-weight:bold; color:{theme["text"]};">{value}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -81,22 +111,42 @@ def game_card(
     numbers: list[int],
     status: str,
     accent_color="#2563eb",
-    background_color="rgba(255,255,255,0.05)",
+    background_color=None,
+    extras: dict | None = None,
 ):
+    theme = get_theme()
+    bg = background_color if background_color is not None else theme["card"]
+    muted = theme["muted"]
+
+    extras_html = ""
+    if extras:
+        lines = []
+        for field, values in extras.items():
+            label = field.capitalize()
+            nums = " • ".join(f"{int(n):02d}" for n in values)
+            lines.append(f"{label}: {nums}")
+        extras_html = (
+            f"<div style='margin-top:10px; font-size:15px; letter-spacing:1px; color:{muted};'>"
+            + "<br>".join(lines)
+            + "</div>"
+        )
+
     st.markdown(
         f"""
         <div style="
             padding:15px;
             border-radius:10px;
-            background:{background_color};
+            background:{bg};
             border-left:6px solid {accent_color};
             margin-bottom:15px;
+            color:{theme["text"]};
         ">
             <strong>{title}</strong><br><br>
             <div style="font-size:18px; letter-spacing:2px;">
                 {" • ".join(f"{n:02d}" for n in numbers)}
             </div>
-            <div style="margin-top:8px; color:#9ca3af;">
+            {extras_html}
+            <div style="margin-top:8px; color:{muted};">
                 {status}
             </div>
         </div>
@@ -105,38 +155,21 @@ def game_card(
     )
 
 
-# def game_card(title: str, numbers: list[int], status: str):
-#    nums = " • ".join(f"{n:02d}" for n in numbers)
-#
-#    st.markdown(
-#        f"""
-#        <div style="
-#            background-color:{CARD_COLOR};
-#            padding:15px;
-#            border-radius:14px;
-#            margin-bottom:15px;
-#            text-align:center;
-#        ">
-#            <div style="font-size:18px; font-weight:bold;">{title}</div>
-#            <div style="font-size:18px; margin:10px 0;">{nums}</div>
-#            <div style="color:#ff6b6b;">{status}</div>
-#        </div>
-#        """,
-#        unsafe_allow_html=True,
-#    )
-
-
 def card(title: str, content: str):
+    theme = get_theme()
+
     st.markdown(
         f"""
         <div style="
-            background-color:{CARD_COLOR};
+            background-color:{theme["card"]};
             padding:20px;
             border-radius:10px;
             margin-bottom:15px;
+            border: 1px solid {theme["secondary"]};
+            color:{theme["text"]};
         ">
-            <h4>{title}</h4>
-            <p>{content}</p>
+            <h4 style="color:{theme["text"]}; margin-top:0;">{title}</h4>
+            <p style="color:{theme["muted"]};">{content}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -144,20 +177,23 @@ def card(title: str, content: str):
 
 
 def status_message(message: str, status: str = "info"):
+    theme = get_theme()
     colors = {
-        "success": SUCCESS_COLOR,
-        "warning": WARNING_COLOR,
-        "error": ERROR_COLOR,
-        "info": PRIMARY_COLOR,
+        "success": theme["success"],
+        "warning": theme["warning"],
+        "error": theme["error"],
+        "info": theme["primary"],
     }
 
     st.markdown(
         f"""
         <div style="
-            border-left: 5px solid {colors.get(status, PRIMARY_COLOR)};
+            border-left: 5px solid {colors.get(status, theme["primary"])};
             padding: 10px 15px;
             margin: 10px 0;
-            background-color: {CARD_COLOR};
+            background-color: {theme["card"]};
+            color: {theme["text"]};
+            border-radius: 6px;
         ">
             {message}
         </div>

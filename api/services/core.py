@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 
 from loterias_core.generator import generate_unique_combinations
-from loterias_core.lotteries import LOTTERIES_BY_KEY
+from loterias_core.lotteries import LOTTERIES_BY_KEY, LotteryConfig
 from loterias_core.repository import (
     get_cache_status,
     get_health_payload,
@@ -19,18 +19,25 @@ from loterias_core.validator import check_game
 
 logger = logging.getLogger(__name__)
 
-MEGASENA_KEY = "megasena"
-MEGASENA_CONFIG = LOTTERIES_BY_KEY[MEGASENA_KEY].to_dict()
+DEFAULT_LOTTERY_KEY = "megasena"
 
 
-def get_dataset_status() -> dict:
-    """Metadados da Mega-Sena para /health e GET /dataset/ (compatibilidade)."""
-    status = get_cache_status(MEGASENA_KEY)
+def _config(lottery_key: str) -> LotteryConfig:
+    config = LOTTERIES_BY_KEY.get(lottery_key)
+    if config is None:
+        raise KeyError(f"Loteria desconhecida: {lottery_key}")
+    return config
+
+
+def get_dataset_status(lottery_key: str = DEFAULT_LOTTERY_KEY) -> dict:
+    """Metadados de uma modalidade para GET /dataset/ e compatibilidade."""
+    status = get_cache_status(lottery_key)
     from loterias_core.storage import get_db_path
 
     return {
         "exists": status["exists"],
         "path": get_db_path(),
+        "lottery_key": lottery_key,
         "last_update": status["last_update"],
         "last_concurso": status["last_concurso"],
         "total_records": status["total_records"] if status["exists"] else None,
@@ -42,46 +49,88 @@ def get_all_lotteries_status() -> dict:
     return get_cache_status()
 
 
-def load_dataset() -> pd.DataFrame:
-    """Carrega o dataset da Mega-Sena do SQLite."""
-    return load_lottery_dataframe(MEGASENA_KEY)
+def list_lotteries() -> list[dict]:
+    """Catálogo + status de cache para GET /lotteries."""
+    cache = get_cache_status()
+    items: list[dict] = []
+    for key, cfg in LOTTERIES_BY_KEY.items():
+        status = cache.get(key, {})
+        items.append(
+            {
+                "key": key,
+                "name": cfg.name,
+                "total_bolas": cfg.total_bolas,
+                "universo": cfg.universo,
+                "exists": bool(status.get("exists")),
+                "total_records": status.get("total_records", 0),
+                "last_update": status.get("last_update"),
+                "last_concurso": status.get("last_concurso"),
+            }
+        )
+    return items
 
 
-def update_dataset(source: DataSource | str = DataSource.AUTO, *, incremental: bool = True):
-    """Atualiza a Mega-Sena baixando da Caixa e persistindo incrementalmente."""
+def load_dataset(lottery_key: str = DEFAULT_LOTTERY_KEY) -> pd.DataFrame:
+    """Carrega o dataset de uma modalidade do SQLite."""
+    return load_lottery_dataframe(lottery_key)
+
+
+def update_dataset(
+    lottery_key: str = DEFAULT_LOTTERY_KEY,
+    source: DataSource | str = DataSource.AUTO,
+    *,
+    incremental: bool = True,
+):
+    """Baixa da Caixa e persiste incrementalmente a modalidade informada."""
+    config = _config(lottery_key)
     logger.info(
-        "Iniciando download da base Mega-Sena (source=%s, incremental=%s)", source, incremental
+        "Iniciando download da base %s (source=%s, incremental=%s)",
+        config.name,
+        source,
+        incremental,
     )
     try:
-        df_raw = download_lottery_data(MEGASENA_KEY, source=source)
+        df_raw = download_lottery_data(lottery_key, source=source)
     except ScraperError as exc:
-        logger.exception("Scraper falhou ao baixar Mega-Sena")
+        logger.exception("Scraper falhou ao baixar %s", config.name)
         raise RuntimeError(str(exc)) from exc
 
     processed, inserted = update_lottery_from_raw(
-        MEGASENA_KEY,
+        lottery_key,
         df_raw,
-        MEGASENA_CONFIG,
+        config.to_dict(),
         incremental=incremental,
     )
     logger.info(
-        "Dataset Mega-Sena atualizado — %d novos registros, total %d",
+        "Dataset %s atualizado — %d novos registros, total %d",
+        config.name,
         inserted,
         len(processed),
     )
     return processed
 
 
-def verify_game(numbers: list[int]) -> bool:
-    """Verifica se um jogo já foi sorteado."""
-    df = load_dataset()
-    return check_game(sorted(numbers), df)
+def verify_game(
+    lottery_key: str,
+    numbers: list[int],
+    extras: dict[str, list[int]] | None = None,
+) -> bool:
+    """Verifica se um jogo já foi sorteado na modalidade."""
+    df = load_dataset(lottery_key)
+    return check_game(sorted(numbers), df, extra_values=extras)
 
 
-def generate_unique_combination_games(n: int = 10):
-    """Gera combinações inéditas com base no histórico da Mega-Sena."""
-    df = load_dataset()
-    return generate_unique_combinations(df, n_games=n, total_bolas=6, universo=60)
+def generate_unique_combination_games(lottery_key: str, n: int = 10):
+    """Gera combinações inéditas com base no histórico da modalidade."""
+    config = _config(lottery_key)
+    df = load_dataset(lottery_key)
+    return generate_unique_combinations(
+        df,
+        n_games=n,
+        total_bolas=config.total_bolas,
+        universo=config.universo,
+        extra_fields=config.extra_fields,
+    )
 
 
 def health_info() -> dict:

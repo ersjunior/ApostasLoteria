@@ -1,237 +1,147 @@
-
-# 🎰 Loterias Analyzer
+# Loterias Analyzer
 
 ![CI](https://github.com/ersjunior/ApostasLoteria/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red)
-![Status](https://img.shields.io/badge/Status-Ativo-success)
+![FastAPI](https://img.shields.io/badge/FastAPI-multi--loteria-teal)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-> **Análise estatística, verificação de jogos e geração de combinações inéditas para loterias brasileiras**, utilizando dados oficiais da Caixa Econômica Federal.
+> Análise estatística, verificação de jogos e geração de combinações inéditas para loterias brasileiras — com dados oficiais da Caixa Econômica Federal.
 
-Uma plataforma **educacional e analítica** para estudo de loterias brasileiras, baseada em dados oficiais da Caixa Econômica Federal.
+Plataforma **educacional e analítica** em **Python**: interface **Streamlit** e **API REST (FastAPI)** compartilhando o mesmo domínio (`loterias_core`) e o mesmo banco **SQLite**.
 
-> ⚠️ **Aviso:** Este projeto **não garante prêmios**. Todos os sorteios são eventos aleatórios.
+> **Aviso:** este projeto **não garante prêmios**. Sorteios são eventos aleatórios.
 > Se você ou alguém próximo tem dificuldade com jogo compulsivo, busque apoio em [Jogadores Anônimos](https://jogadoresanonimos.com.br/).
 
 ---
 
-## 📌 Visão Geral
+## Visão geral
 
-O **Loterias Analyzer** é uma aplicação **educacional e analítica**, desenvolvida em **Python + Streamlit**, projetada para estudar jogos de loteria de forma estruturada, clara e extensível.
+| Camada | Papel |
+|--------|--------|
+| **Streamlit** (`app/`) | UI multipágina: estatísticas, verificação, combinações, histórico, upload de XLSX |
+| **FastAPI** (`api/`) | REST multi-loteria + aliases Mega-Sena; scraper; health/cache |
+| **loterias_core/** | Domínio puro: catálogo, ingestão, estatística, gerador, storage SQLite |
+| **SQLite** | Store único: `app/data/loterias.db` (sorteios, metadados e histórico local) |
 
-O projeto oferece:
-
-- 🔍 Verificação de jogos históricos
-- 🔮 Geração de combinações inéditas (sorteio aleatório, sem ML)
-- 📊 Estatísticas interativas com gráficos
-- 💰 Simulação de custos e probabilidades reais
-- 📄 Exportação de relatórios e dados
-- 🌐 API REST (FastAPI) para Mega-Sena
+O Streamlit **não** chama a API por HTTP. Em Docker, ambos serviços montam o mesmo volume e a mesma `LOTTERIAS_DB_PATH`.
 
 ---
 
-## 🎲 Loterias Suportadas
+## Loterias suportadas
 
-| Loteria | Suporte |
-|------|------|
-| 🎰 Mega-Sena | ✅ |
-| 🍀 Lotofácil | ✅ |
-| 🎯 Quina | ✅ |
-| 🔁 Dupla Sena (2 sorteios) | ✅ |
-| 🌞 Dia de Sorte | ✅ |
-| ⚽ Timemania | ✅ |
-| 7️⃣ Super Sete | ✅ |
-| 💎 +Milionária (dezenas + trevos) | ✅ |
-| 🎲 Lotomania | ⚠️ Estrutura especial |
+Nove modalidades no catálogo (`loterias_core/lotteries.py`):
 
----
-
-## 🧠 Funcionalidades
-
-### 🎯 Verificação de Jogos
-- Verificação de múltiplos jogos
-- Validação correta por tipo de loteria
-- Suporte a campos extras e múltiplos sorteios
-- Resultados exibidos em cards organizados
-
-### 🔮 Gerador de Combinações Inéditas
-- Sorteio aleatório uniforme de combinações nunca sorteadas
-- Respeita regras específicas de cada loteria
-- **Sem modelo preditivo** — não há machine learning em produção
-- Exportação em CSV
-
-### 📊 Estatísticas Interativas
-- Frequência histórica das dezenas
-- Teste qui-quadrado de uniformidade (hot/cold é ruído)
-- Valor esperado e vantagem da casa
-- Probabilidade empírica e combinatória C(n,k) por modalidade
-- Top & Bottom dezenas (dinâmico)
-- Gráficos interativos com Plotly
-- Simulação de custos e probabilidades
-
-### 🌐 API REST (Mega-Sena)
-- `GET /health` — health check, status do banco SQLite e cache por modalidade
-- `POST /verify/` — verificação de jogos
-- `GET /combinations/` e `GET /forecast/` — combinações inéditas
-- `GET` / `POST /dataset/` — metadados e atualização via scraper
-- CORS, rate limiting, validação Pydantic e logging configuráveis
-
-### 📄 Relatórios
-- Exportação de jogos em CSV
+| Loteria | Key | Particularidades |
+|---------|-----|------------------|
+| Mega-Sena | `megasena` | 6 dezenas / universo 60 |
+| Lotofácil | `lotofacil` | 15 / 25 |
+| Quina | `quina` | 5 / 80 |
+| Dupla Sena | `duplasena` | 2 sorteios por concurso (`draw_index`) |
+| Lotomania | `lotomania` | Handler especial (50 / 100) |
+| Dia de Sorte | `diadesorte` | 7 / 31 |
+| Timemania | `timemania` | Time do Coração (`timecoração`) |
+| Super Sete | `supersete` | 7 colunas posicionais (dígitos 0–9) |
+| +Milionária | `mais_milionaria` | 6 dezenas + 2 trevos (1–6) |
 
 ---
 
-## 🧭 Como Utilizar
+## Funcionalidades
 
-### 1️⃣ Obter a base oficial
-Acesse o site da Caixa Econômica Federal:
+### Interface Streamlit
 
-https://loterias.caixa.gov.br/
+- **Controles na sidebar** — loteria e tema claro/escuro compartilhados entre páginas (`app/ui/shell.py`)
+- **Home** — visão do produto, status das bases no SQLite, upload do XLSX oficial
+- **Estatísticas** — frequência, qui-quadrado, valor esperado, C(n,k), Plotly, PDF; análises específicas (trevos, Dupla Sena, Super Sete, Timemania)
+- **Verificação** — 1–20 jogos com extras; salvamento no histórico local
+- **Combinações inéditas** — sorteio aleatório uniforme (**sem ML**); CSV + histórico
+- **Histórico** — listar, filtrar, exportar, apagar e verificar novamente (`user_games`)
+- **Feito por** — perfil e links (`app/author.py` → GitHub `ersjunior`)
 
-Faça o download do arquivo **XLSX** da loteria desejada (link também disponível na barra lateral da Home).
+### API REST (multi-loteria)
 
----
+Rotas canônicas usam `lottery_key`. Aliases sem path key continuam apontando para a **Mega-Sena**.
 
-### 2️⃣ Upload do XLSX (Streamlit)
-Na página **Home** (`app/Home.py`), barra lateral **"📤 Upload Manual do XLSX"**:
-1. Selecione a loteria correspondente ao arquivo
-2. Envie o XLSX oficial
-3. Confira **"📂 Status das Bases"** na Home (✅ = base carregada no SQLite)
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/health` | Status da API, banco e cache |
+| `GET` | `/lotteries` | Catálogo + cache por modalidade |
+| `POST` | `/lotteries/{key}/verify` | Verificar jogo |
+| `GET` | `/lotteries/{key}/combinations?n=` | Combinações inéditas |
+| `GET` | `/lotteries/{key}/forecast?n=` | Alias de combinations |
+| `GET` / `POST` | `/lotteries/{key}/dataset` | Metadados / atualizar via scraper |
+| `POST` | `/verify/` | Alias Mega-Sena |
+| `GET` | `/combinations/`, `/forecast/` | Aliases Mega-Sena |
+| `GET` / `POST` | `/dataset/` | Aliases Mega-Sena |
 
-Os dados são persistidos em **`app/data/loterias.db`** (SQLite), compartilhado entre Streamlit e API no Docker.
+Swagger: http://localhost:8000/docs · CORS, rate limit e validação Pydantic configuráveis.
 
-⚠️ Use apenas arquivos oficiais da Caixa.
+### Persistência
 
----
+| Item | Valor |
+|------|--------|
+| Arquivo padrão | `app/data/loterias.db` |
+| Env | `LOTTERIAS_DB_PATH` |
+| Tabelas | `draws`, `lottery_metadata`, `user_games` |
 
-### 2️⃣ bis — Atualização via API (opcional, Mega-Sena)
-
-Com a **API FastAPI** em execução, use `POST /dataset/` em http://localhost:8000/docs para baixar a Mega-Sena automaticamente. A atualização é **incremental por concurso** — só novos sorteios são inseridos no banco.
-
----
-
-### 3️⃣ Verificação
-- Vá até **🎯 Verificação**
-- Selecione a loteria e insira seus jogos
-- Veja se já foram sorteados
-
----
-
-### 4️⃣ Combinações Inéditas
-- Vá até **🔮 Combinações Inéditas**
-- Gere combinações inéditas por sorteio aleatório
-- Exporte os resultados em CSV
-
----
-
-### 5️⃣ Estatísticas
-- Vá até **📊 Estatísticas**
-- Explore gráficos, probabilidades e custos
+O **XLSX da Caixa** é só formato de **ingestão** (upload na Home ou `POST .../dataset`). A leitura operacional é sempre pelo SQLite.
 
 ---
 
-## 🏗️ Estrutura do Projeto
+## Como utilizar (caminho feliz)
+
+1. **Obtenha o XLSX oficial** em https://loterias.caixa.gov.br/ (ou use o scraper da API).
+2. **Home → sidebar** — upload do arquivo na loteria correta; confira **Status das Bases**.
+3. **Controles (sidebar)** — escolha modalidade e tema; a preferência permanece ao navegar.
+4. Explore **Estatísticas**, **Verificação**, **Combinações** e **Histórico**.
+
+Alternativa API: `POST /lotteries/{key}/dataset` (ou `POST /dataset/` para Mega-Sena) popula o mesmo banco.
+
+Guia completo: [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
+
+---
+
+## Estrutura do projeto
 
 ```
-├── .github/
-│   ├── ISSUE_TEMPLATE/             # Templates de bug e feature
-│   ├── PULL_REQUEST_TEMPLATE.md
-│   └── workflows/
-│       ├── ci.yml                  # Lint, mypy, pytest, cobertura
-│       └── docker.yml              # Build das imagens Docker
-├── api/                            # API REST (FastAPI)
-│   ├── config.py                   # Variáveis de ambiente
+├── .github/workflows/          # ci.yml (lint/testes) · docker.yml (build + smoke API)
+├── .streamlit/                 # config.toml (tema de boot) · secrets.toml.example
+├── api/                        # FastAPI multi-loteria
 │   ├── main.py
-│   ├── routes/
-│   │   ├── combinations.py
-│   │   ├── dataset.py
-│   │   ├── forecast.py
-│   │   ├── health.py               # GET /health
-│   │   └── verify.py
-│   └── services/
-│       └── core.py
-├── loterias_core/                  # Domínio puro (app + api consomem)
-│   ├── combinatorics.py
-│   ├── dataset.py
-│   ├── expected_value.py
-│   ├── generator.py
-│   ├── lotteries.py
-│   ├── schema.py
-│   ├── scraper.py
-│   ├── statistics.py
-│   └── validator.py
-├── app/                            # Aplicação Streamlit
-│   ├── core/
-│   │   └── lotteries.py
-│   ├── data/                       # Bases XLSX/CSV (gitignored)
-│   ├── pages/
-│   │   ├── 1_📊_Estatísticas.py
-│   │   ├── 2_🎯_Verificação.py
-│   │   ├── 3_🔮_Combinações_Inéditas.py
-│   │   └── 4_👨‍💻_Feito por.py
-│   ├── services/
-│   │   ├── cache.py
-│   │   ├── dataset.py
-│   │   ├── exporter.py
-│   │   ├── report.py
-│   │   ├── scraper.py
-│   │   ├── statistics.py
-│   │   └── validator.py
-│   ├── ui/
-│   │   ├── lottery_selector.py
-│   │   ├── theme_manager.py
-│   │   └── theme.py
-│   └── Home.py                     # entrypoint Streamlit
-├── docker/
-│   ├── Dockerfile.api
-│   ├── Dockerfile.streamlit
-│   └── entrypoint.sh
-├── tests/
-│   ├── fixtures/                   # XLSX/CSV de teste por loteria
-│   ├── test_api.py
-│   ├── test_cache.py
-│   ├── test_combinatorics.py
-│   ├── test_dataset.py
-│   ├── test_exporter.py
-│   ├── test_generator.py
-│   ├── test_report.py
-│   ├── test_schema.py
-│   ├── test_scraper.py
-│   ├── test_statistics.py
-│   └── test_validator.py
-├── .env.example                    # Variáveis de ambiente (copie para .env)
-├── CHANGELOG.md
-├── CONTRIBUTING.md
+│   ├── deps.py · config.py · schemas.py · limiter.py
+│   ├── routes/                 # health, lotteries, verify, combinations, forecast, dataset
+│   └── services/core.py
+├── loterias_core/              # Domínio compartilhado
+│   ├── lotteries.py · dataset.py · repository.py · storage.py
+│   ├── statistics.py · generator.py · validator.py · scraper.py
+│   ├── combinatorics.py · expected_value.py · schema.py · user_history.py
+├── app/                        # Streamlit
+│   ├── Home.py · author.py · config.py
+│   ├── pages/                  # Estatísticas · Verificação · Combinações · Feito por · Histórico
+│   ├── services/               # Camada fina sobre o core (+ report PDF)
+│   ├── ui/                     # shell · lottery_selector · theme · theme_manager
+│   ├── combinations/           # Wrapper do gerador
+│   └── data/                   # loterias.db em runtime (gitignored)
+├── docker/                     # Dockerfile.api · Dockerfile.streamlit · entrypoint.sh
+├── docs/                       # COMO_EXECUTAR · ARCHITECTURE_NOTES
+├── scripts/smoke_api.py
+├── tests/                      # fixtures + cobertura de domínio/API/UI services
 ├── docker-compose.yml
-├── docs/
-│   ├── ARCHITECTURE_NOTES.md
-│   ├── COMO_EXECUTAR.md
-│   └── README.md
-├── pyproject.toml                  # Dependências e config (ruff, mypy, pytest)
-├── requirements.txt                # Atalho: pip install -e .
-├── requirements-api.txt            # Atalho: pip install -e .[api]
-└── README.md
+├── pyproject.toml
+└── requirements*.txt           # Atalhos: -e . / .[api] / .[dev]
 ```
 
----
-
-## ⚙️ Tecnologias
-
-- 🐍 Python 3.11+
-- 🎨 Streamlit
-- ⚡ FastAPI + Uvicorn
-- 📊 Pandas & NumPy
-- 📈 Plotly
-- 📄 ReportLab
-- 📁 XLSX oficiais da Caixa
-- 🔧 Ruff, mypy, pytest, pre-commit
+Arquitetura detalhada: [docs/ARCHITECTURE_NOTES.md](docs/ARCHITECTURE_NOTES.md).
 
 ---
 
-## 🔧 Variáveis de ambiente
+## Tecnologias
 
-Copie o exemplo e ajuste conforme necessário:
+Python 3.11+ · Streamlit · FastAPI / Uvicorn · Pandas / NumPy · Plotly · ReportLab · SQLite · Ruff / mypy / pytest / pre-commit · Docker Compose
+
+---
+
+## Variáveis de ambiente
 
 ```bash
 cp .env.example .env          # Linux/macOS
@@ -240,214 +150,155 @@ copy .env.example .env        # Windows
 
 | Variável | Padrão | Descrição |
 |----------|--------|-----------|
+| `LOTTERIAS_DB_PATH` | `app/data/loterias.db` | SQLite compartilhado (Streamlit + API) |
 | `LOG_LEVEL` | `INFO` | Nível de log da API |
 | `ENVIRONMENT` | `development` | `production` restringe CORS se `CORS_ORIGINS` vazio |
 | `CORS_ORIGINS` | *(vazio)* | Origens permitidas, separadas por vírgula |
-| `MAX_BODY_BYTES` | `10240` | Limite de payload HTTP (bytes) |
-| `MAX_FORECAST_N` | `100` | Máximo do parâmetro `n` em forecast/combinations |
-| `RATE_LIMIT_DATASET` | `3/hour` | Rate limit do `POST /dataset/` |
-| `RATE_LIMIT_FORECAST` | `30/minute` | Rate limit do `GET /forecast/` |
-| `RATE_LIMIT_COMBINATIONS` | `60/minute` | Rate limit do `GET /combinations/` |
+| `MAX_BODY_BYTES` | `10240` | Limite de payload HTTP |
+| `MAX_FORECAST_N` | `100` | Máximo de `n` em forecast/combinations |
+| `RATE_LIMIT_DATASET` | `3/hour` | Rate limit de `POST .../dataset` |
+| `RATE_LIMIT_FORECAST` | `30/minute` | Rate limit de forecast |
+| `RATE_LIMIT_COMBINATIONS` | `60/minute` | Rate limit de combinations |
 
-> O Streamlit **não** consome a API por HTTP; `API_BASE_URL` não se aplica na arquitetura atual. Detalhes em [`.env.example`](.env.example) e [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
+No Streamlit Community Cloud, use secrets (veja [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example)); `app/config.py` aplica `LOTTERIAS_DB_PATH` na inicialização.
 
 ---
 
-## 🚀 Como executar (Docker — recomendado)
+## Execução
 
-**Pré-requisito:** [Docker](https://docs.docker.com/get-docker/) e [Docker Compose](https://docs.docker.com/compose/) (Compose v2 vem com Docker Desktop).
-
-Na raiz do repositório:
+### Docker (recomendado)
 
 ```bash
 docker compose up --build
 ```
 
-Para encerrar os containers: `docker compose down`.
+| Serviço | URL |
+|---------|-----|
+| Streamlit | http://localhost:8501 |
+| API | http://localhost:8000 |
+| Swagger | http://localhost:8000/docs |
+| Health | http://localhost:8000/health |
 
-Isso sobe:
-
-| Serviço    | URL                         |
-|-----------|-----------------------------|
-| Streamlit | http://localhost:8501       |
-| API (FastAPI) | http://localhost:8000   |
-| Documentação Swagger | http://localhost:8000/docs |
-| Health check | http://localhost:8000/health |
-
-Os dados em `app/data/` (arquivos enviados ou gerados pela app) ficam no volume Docker `apostas-data` e persistem entre reinícios dos containers.
-
-### Apenas a interface Streamlit
+Volume `apostas-data` persiste `loterias.db`. Tema de boot vem de `.streamlit/config.toml` embutido na imagem Streamlit; o seletor de tema na sidebar ajusta cores em runtime via CSS.
 
 ```bash
-docker compose up --build streamlit
+docker compose up --build streamlit   # só UI
+docker compose up --build api         # só API
 ```
 
-### Apenas a API
+### Local (sem Docker)
 
 ```bash
-docker compose up --build api
-```
-
-### Build manual (sem Compose)
-
-**Streamlit:**
-
-```bash
-docker build -f docker/Dockerfile.streamlit -t loterias-analyzer-streamlit .
-docker run --rm -p 8501:8501 -v loterias-data:/app/app/data loterias-analyzer-streamlit
-```
-
-**API:**
-
-```bash
-docker build -f docker/Dockerfile.api -t loterias-analyzer-api .
-docker run --rm -p 8000:8000 -v loterias-data:/app/app/data loterias-analyzer-api
-```
-
----
-
-## 💻 Execução local (sem Docker)
-
-```bash
-# criar ambiente virtual
 python -m venv .venv
-
-# ativar
-# Windows
-.venv\Scripts\activate
-# Linux/Mac
-source .venv/bin/activate
-
-# instalar dependências (app + API + ferramentas de dev)
+# Windows: .venv\Scripts\activate  ·  Linux/macOS: source .venv/bin/activate
 pip install -e ".[dev,api]"
-
-# variáveis de ambiente (opcional, principalmente para a API)
-cp .env.example .env
-
-# hooks de qualidade (opcional, recomendado)
-pre-commit install
-
-# interface web
+cp .env.example .env                  # opcional
+pre-commit install                    # opcional
 streamlit run app/Home.py
 ```
 
-Para a API localmente:
+API:
 
 ```bash
 uvicorn api.main:app --reload
 ```
 
-A API expõe `GET /health` para health check, CORS configurável via `CORS_ORIGINS`, rate limiting em rotas sensíveis e validação Pydantic com respostas de erro `{detail, code}`. Detalhes em [docs/COMO_EXECUTAR.md](docs/COMO_EXECUTAR.md).
-
-### Qualidade de código
+### Qualidade
 
 ```bash
 ruff check .
 ruff format --check .
 pytest
+pytest --cov --cov-report=term-missing   # limiar 60%
 mypy app api loterias_core
 ```
 
----
+### Smoke da API
 
-## 🔄 CI (GitHub Actions)
+```bash
+python scripts/smoke_api.py
+API_BASE_URL=https://sua-api.exemplo.com python scripts/smoke_api.py
+```
 
-O badge no topo aponta para o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
-
-| Job | O que faz |
-|-----|-----------|
-| **lint-test** | Ruff lint + format, mypy (continue-on-error), pytest com cobertura mínima 60% |
-| Matriz | Python **3.11** e **3.12** |
-| Artefato | `coverage.xml` (Python 3.11) |
-
-Workflow adicional [`.github/workflows/docker.yml`](.github/workflows/docker.yml) valida o build das imagens API e Streamlit em cada PR/push.
+Exige `GET /health` (`status=ok`) e `GET /lotteries` (lista não vazia). O workflow Docker executa o mesmo smoke após subir o container.
 
 ---
 
-## 🤝 Contribuindo
+## CI
 
-Leia [CONTRIBUTING.md](CONTRIBUTING.md) para configurar o ambiente, rodar testes, padrão de commits e abrir PRs. Use os templates em [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) para bugs e features.
-
-Histórico de mudanças: [CHANGELOG.md](CHANGELOG.md).
-
----
-
-## ⚠️ Aviso Legal e Jogo Responsável
-
-Este projeto é **estritamente educacional e analítico**.
-Jogos de loteria são eventos **aleatórios**.
-Nenhuma análise estatística garante prêmio.
-
-Se você ou alguém próximo tem dificuldade com **jogo compulsivo**, procure apoio gratuito em [Jogadores Anônimos](https://jogadoresanonimos.com.br/). Para apoio emocional imediato, ligue **188** (CVV — Centro de Valorização da Vida).
-
-A interface Streamlit exibe uma nota de jogo responsável no rodapé de todas as páginas.
+| Workflow | Função |
+|----------|--------|
+| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Ruff, mypy, pytest + cobertura (Python 3.11 e 3.12) |
+| [`.github/workflows/docker.yml`](.github/workflows/docker.yml) | Build das imagens + smoke live da API |
 
 ---
 
-## 👨‍💻 Feito por
+## Deploy
 
-**Eliezer Junior**
-- 💼 LinkedIn: https://www.linkedin.com/in/eliezer-junior/
-- 🐙 GitHub: https://github.com/eliezerjunior
+### Streamlit Community Cloud (somente UI)
 
-Especialista em Dados, Engenharia e Inteligência Artificial.
-
----
-
-## 📌 Roadmap
-
-- [x] API REST (FastAPI)
-- [x] Docker / Compose
-- [x] CI (lint, testes, cobertura)
-- [x] Pacote `loterias_core` compartilhado
-- [ ] Histórico de jogos do usuário
-- [x] Cache avançado por loteria (SQLite + atualização incremental)
-- [x] Deploy em cloud (Streamlit Community Cloud)
-
----
-
-## 🚀 Deploy (Streamlit Community Cloud)
-
-### Pré-requisitos
-
-- Repositório no GitHub (público ou privado com plano compatível)
-- Conta em [share.streamlit.io](https://share.streamlit.io/)
-
-### Passo a passo
-
-1. **Fork / push** do repositório para o GitHub.
-2. Acesse [Streamlit Community Cloud](https://share.streamlit.io/) → **New app**.
-3. Selecione o repositório, branch e defina:
-   - **Main file path:** `app/Home.py`
-   - **Python version:** 3.11+
-4. Em **Advanced settings → Secrets**, configure (veja [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example)):
+1. Publique o repositório no GitHub.
+2. Em [share.streamlit.io](https://share.streamlit.io/) → **New app** → main file `app/Home.py`, Python 3.11+.
+3. Secrets (exemplo):
 
 ```toml
 LOTTERIAS_DB_PATH = "app/data/loterias.db"
 ```
 
-5. Clique em **Deploy**. O app sobe sem dados — na primeira visita, faça **upload do XLSX** oficial na barra lateral ou popule via API em outro ambiente e copie o `loterias.db`.
+4. No primeiro acesso, faça upload do XLSX na sidebar da Home.
 
-### Variáveis de ambiente
+A **API FastAPI não sobe** no Community Cloud — use Docker Compose ou um PaaS separado.
 
-| Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `LOTTERIAS_DB_PATH` | `app/data/loterias.db` | Caminho do banco SQLite |
-
-No Cloud, secrets em `st.secrets` são lidos na inicialização via `app/config.py`.
-
-### Banco vazio no primeiro boot
-
-Se nenhuma modalidade estiver carregada, a Home exibe aviso e instruções. Faça upload do XLSX oficial ou use `POST /dataset/` (API) para a Mega-Sena.
-
-### Docker local (produção)
+### API (Docker / PaaS)
 
 ```bash
+docker compose up --build api
+# ou a stack completa:
 docker compose up --build
 ```
 
-Volume `apostas-data` persiste `loterias.db` entre reinícios. Ambos os serviços usam `LOTTERIAS_DB_PATH=/app/app/data/loterias.db`.
+---
+
+## Contribuindo
+
+Veja [CONTRIBUTING.md](CONTRIBUTING.md). Templates de issue/PR em [`.github/`](.github/). Histórico: [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-⭐ Se este projeto foi útil, deixe uma estrela no GitHub!
+## Aviso legal e jogo responsável
+
+Projeto **estritamente educacional**. Loterias são jogos de azar; estatística histórica **não prevê** o próximo sorteio.
+
+Apoio: [Jogadores Anônimos](https://jogadoresanonimos.com.br/) · CVV **188**.
+
+Todas as páginas Streamlit exibem o rodapé de jogo responsável.
+
+---
+
+## Feito por
+
+**Eliezer Junior**
+
+- LinkedIn: https://www.linkedin.com/in/eliezer-junior/
+- GitHub: https://github.com/ersjunior
+
+Identidade centralizada em [`app/author.py`](app/author.py).
+
+---
+
+## Roadmap (estado atual)
+
+- [x] API REST multi-loteria (FastAPI) + aliases Mega-Sena
+- [x] Docker Compose + smoke live da API
+- [x] CI (lint, testes, cobertura)
+- [x] Domínio `loterias_core` + SQLite unificado
+- [x] Histórico local de jogos (`user_games`)
+- [x] Sidebar global (loteria + tema) e análises específicas por modalidade
+- [x] PDF nas Estatísticas (com fallback sem Kaleido)
+- [x] Scaffolding Streamlit Community Cloud (UI)
+
+Ideias futuras (não comprometidas): mês da sorte no Dia de Sorte, seções especiais no PDF, PaaS da API documentado ponta a ponta.
+
+---
+
+Se este projeto foi útil, deixe uma estrela no GitHub.

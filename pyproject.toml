@@ -9,6 +9,7 @@ description = "Análise estatística, verificação de jogos e gerador de combin
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+authors = [{ name = "Eliezer Junior" }]
 dependencies = [
     "streamlit==1.53.0",
     "pandas==2.3.3",
@@ -25,7 +26,6 @@ api = [
     "fastapi==0.128.0",
     "uvicorn[standard]==0.34.0",
     "pydantic==2.12.5",
-    "scikit-learn==1.8.0",
     "slowapi==0.1.9",
     "httpx==0.28.1",
 ]
@@ -36,6 +36,11 @@ dev = [
     "mypy==2.3.0",
     "pre-commit==4.2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ersjunior/ApostasLoteria"
+Repository = "https://github.com/ersjunior/ApostasLoteria"
+Issues = "https://github.com/ersjunior/ApostasLoteria/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -87,14 +92,6 @@ disallow_untyped_defs = false
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-addopts = [
-    "--cov=app",
-    "--cov=api",
-    "--cov=loterias_core",
-    "--cov-report=term-missing",
-    "--cov-report=xml",
-    "--cov-fail-under=60",
-]
 
 [tool.coverage.run]
 source = ["app", "api", "loterias_core"]
@@ -108,6 +105,7 @@ omit = [
 ]
 
 [tool.coverage.report]
+fail_under = 60
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",

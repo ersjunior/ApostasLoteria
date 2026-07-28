@@ -78,9 +78,7 @@ def test_load_dataset_duplasena_multiple_draws(lottery_fixture_paths):
 
 def test_load_dataset_lotomania_special_handler(lottery_fixture_paths):
     path = lottery_fixture_paths["lotomania"]
-    raw = pd.read_excel(path, dtype=str)
-    with patch("loterias_core.dataset.pd.read_excel", return_value=raw):
-        df = load_dataset(str(path), total_bolas=50, special_handler="lotomania")
+    df = load_dataset(str(path), total_bolas=50, special_handler="lotomania")
     assert len(df) == 2
     assert all(len(j) == 50 for j in df["jogo"])
 
@@ -146,6 +144,20 @@ def test_process_raw_dataset_from_dataframe(megasena_fixture, megasena_config):
     processed = process_raw_dataset(raw, megasena_config)
     assert len(processed) == 2
     assert "jogo" in processed.columns
+
+
+def test_process_raw_dataset_stays_in_memory(megasena_fixture, megasena_config):
+    """Upload/API: sem staging XLSX (nem read_excel nem to_excel no processamento)."""
+    raw = pd.read_excel(megasena_fixture)
+
+    with patch("loterias_core.dataset.pd.read_excel") as mock_read:
+        with patch.object(pd.DataFrame, "to_excel") as mock_write:
+            processed = process_raw_dataset(raw, megasena_config)
+
+    assert len(processed) == 2
+    assert "jogo" in processed.columns
+    mock_read.assert_not_called()
+    mock_write.assert_not_called()
 
 
 @patch("api.services.core.download_lottery_data")

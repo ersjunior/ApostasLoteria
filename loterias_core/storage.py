@@ -34,6 +34,19 @@ CREATE TABLE IF NOT EXISTS draws (
 
 CREATE INDEX IF NOT EXISTS idx_draws_lottery_key ON draws (lottery_key);
 CREATE INDEX IF NOT EXISTS idx_draws_concurso ON draws (lottery_key, concurso);
+
+CREATE TABLE IF NOT EXISTS user_games (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lottery_key TEXT NOT NULL,
+    dezenas TEXT NOT NULL,
+    extras TEXT,
+    source TEXT NOT NULL,
+    note TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_games_lottery ON user_games (lottery_key);
+CREATE INDEX IF NOT EXISTS idx_user_games_created ON user_games (created_at);
 """
 
 
@@ -394,3 +407,109 @@ def atomic_replace_database(source_path: str, dest_path: str | None = None) -> N
     except Exception:
         tmp_path.unlink(missing_ok=True)
         raise
+
+
+# =========================
+# HISTÓRICO DE JOGOS DO USUÁRIO
+# =========================
+def add_user_game(
+    lottery_key: str,
+    dezenas: list[int],
+    *,
+    extras: dict[str, Any] | None = None,
+    source: str = "manual",
+    note: str | None = None,
+    db_path: str | None = None,
+) -> int:
+    """Insere um jogo no histórico local. Retorna o id gerado."""
+    if not dezenas:
+        raise ValueError("Informe ao menos uma dezena.")
+    init_db(db_path)
+    with _connect(db_path) as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO user_games (lottery_key, dezenas, extras, source, note, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                lottery_key,
+                _serialize_jogo(list(dezenas)),
+                _serialize_extra(extras or {}),
+                source,
+                note,
+                _now_iso(),
+            ),
+        )
+        conn.commit()
+        return int(cur.lastrowid)
+
+
+def list_user_games(
+    lottery_key: str | None = None,
+    *,
+    limit: int = 100,
+    db_path: str | None = None,
+) -> list[dict[str, Any]]:
+    """Lista jogos salvos (mais recentes primeiro)."""
+    init_db(db_path)
+    limit = max(1, min(int(limit), 1000))
+    with _connect(db_path) as conn:
+        if lottery_key:
+            rows = conn.execute(
+                """
+                SELECT id, lottery_key, dezenas, extras, source, note, created_at
+                FROM user_games
+                WHERE lottery_key = ?
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+                """,
+                (lottery_key, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT id, lottery_key, dezenas, extras, source, note, created_at
+                FROM user_games
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+
+    return [
+        {
+            "id": int(row["id"]),
+            "lottery_key": row["lottery_key"],
+            "dezenas": _deserialize_jogo(row["dezenas"]),
+            "extras": _deserialize_extra(row["extras"]),
+            "source": row["source"],
+            "note": row["note"],
+            "created_at": row["created_at"],
+        }
+        for row in rows
+    ]
+
+
+def delete_user_game(game_id: int, *, db_path: str | None = None) -> bool:
+    """Remove um jogo pelo id. Retorna True se apagou alguma linha."""
+    init_db(db_path)
+    with _connect(db_path) as conn:
+        cur = conn.execute("DELETE FROM user_games WHERE id = ?", (int(game_id),))
+        conn.commit()
+        return cur.rowcount > 0
+
+
+def clear_user_games(
+    lottery_key: str | None = None,
+    *,
+    db_path: str | None = None,
+) -> int:
+    """Apaga jogos do histórico (opcionalmente filtrados por loteria). Retorna quantidade removida."""
+    init_db(db_path)
+    with _connect(db_path) as conn:
+        if lottery_key:
+            cur = conn.execute("DELETE FROM user_games WHERE lottery_key = ?", (lottery_key,))
+        else:
+            cur = conn.execute("DELETE FROM user_games")
+        conn.commit()
+        return int(cur.rowcount)

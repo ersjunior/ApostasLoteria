@@ -17,6 +17,7 @@ os.environ.setdefault("MAX_FORECAST_N", "100")
 
 from api.config import get_settings
 from api.main import app
+from loterias_core.lotteries import LOTTERIES_BY_KEY
 
 get_settings.cache_clear()
 
@@ -54,6 +55,18 @@ def test_health_with_dataset(client, sample_dataset):
     assert body["lotteries"]["megasena"]["exists"] is True
 
 
+def test_list_lotteries(client):
+    response = client.get("/lotteries")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["count"] == len(LOTTERIES_BY_KEY)
+    keys = {item["key"] for item in body["lotteries"]}
+    assert keys == set(LOTTERIES_BY_KEY)
+    megasena = next(item for item in body["lotteries"] if item["key"] == "megasena")
+    assert megasena["total_bolas"] == 6
+    assert megasena["universo"] == 60
+
+
 def test_verify_invalid_payload_returns_422(client, sample_dataset):
     response = client.post("/verify/", json={"numbers": [1, 2, 3]})
     assert response.status_code == 422
@@ -83,6 +96,7 @@ def test_verify_existing_game(client, sample_dataset):
     body = response.json()
     assert body["found"] is True
     assert body["numbers"] == [1, 2, 3, 4, 5, 6]
+    assert body["lottery_key"] == "megasena"
 
 
 def test_verify_new_game(client, sample_dataset):
@@ -95,6 +109,41 @@ def test_verify_new_game(client, sample_dataset):
 def test_verify_dataset_missing_returns_404(client):
     response = client.post("/verify/", json={"numbers": [1, 2, 3, 4, 5, 6]})
     assert response.status_code == 404
+
+
+def test_verify_unknown_lottery_returns_404(client):
+    response = client.post(
+        "/lotteries/naoexiste/verify",
+        json={"numbers": [1, 2, 3, 4, 5, 6]},
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == "NOT_FOUND"
+
+
+def test_verify_wrong_length_for_lottery_returns_422(client):
+    response = client.post(
+        "/lotteries/lotofacil/verify",
+        json={"numbers": [1, 2, 3, 4, 5, 6]},
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert "15" in response.json()["detail"]
+
+
+@patch("api.routes.verify.core.verify_game", return_value=False)
+def test_verify_lotofacil_path(mock_verify, client):
+    numbers = list(range(1, 16))
+    response = client.post(
+        "/lotteries/lotofacil/verify",
+        json={"numbers": numbers},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["lottery_key"] == "lotofacil"
+    assert body["found"] is False
+    mock_verify.assert_called_once()
+    assert mock_verify.call_args.args[0] == "lotofacil"
+    assert mock_verify.call_args.args[1] == numbers
 
 
 def test_forecast_n_above_max_returns_422(client, sample_dataset):
@@ -117,6 +166,7 @@ def test_forecast_success(client, sample_dataset):
     assert response.status_code == 200
     body = response.json()
     assert body["n_games"] == 3
+    assert body["lottery_key"] == "megasena"
     assert len(body["games"]) == 3
     for game in body["games"]:
         assert len(game["dezenas"]) == 6
@@ -126,6 +176,20 @@ def test_forecast_success(client, sample_dataset):
 def test_forecast_dataset_missing_returns_404(client):
     response = client.get("/forecast/?n=1")
     assert response.status_code == 404
+
+
+@patch("api.routes.combinations.core.generate_unique_combination_games")
+def test_combinations_quina_uses_config(mock_generate, client):
+    mock_generate.return_value = [
+        {"dezenas": [1, 2, 3, 4, 5], "extras": None},
+        {"dezenas": [6, 7, 8, 9, 10], "extras": None},
+    ]
+    response = client.get("/lotteries/quina/combinations?n=2")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["lottery_key"] == "quina"
+    assert body["n_games"] == 2
+    mock_generate.assert_called_once_with("quina", n=2)
 
 
 def test_get_dataset_missing_returns_404(client):
@@ -138,8 +202,15 @@ def test_get_dataset_success(client, sample_dataset):
     assert response.status_code == 200
     body = response.json()
     assert body["total_records"] == 2
+    assert body["lottery_key"] == "megasena"
     assert "jogo" in body["columns"]
     assert body["last_update"] is not None
+
+
+def test_get_dataset_path_megasena(client, sample_dataset):
+    response = client.get("/lotteries/megasena/dataset")
+    assert response.status_code == 200
+    assert response.json()["lottery_key"] == "megasena"
 
 
 @patch("api.routes.dataset.update_dataset")
@@ -182,10 +253,8 @@ def test_rate_limit_dataset(mock_update, client, sample_dataset):
     assert third.json()["code"] == "RATE_LIMIT_EXCEEDED"
 
 
-@patch("api.routes.forecast.load_dataset")
-@patch("api.routes.forecast.generate_unique_combinations")
-def test_rate_limit_forecast(mock_generate, mock_load, client, sample_dataset):
-    mock_load.return_value = pd.DataFrame({"jogo": [[1, 2, 3, 4, 5, 6]]})
+@patch("api.routes.forecast.core.generate_unique_combination_games")
+def test_rate_limit_forecast(mock_generate, client, sample_dataset):
     mock_generate.return_value = [{"dezenas": [1, 2, 3, 4, 5, 6], "extras": None}]
 
     responses = [client.get("/forecast/?n=1") for _ in range(3)]

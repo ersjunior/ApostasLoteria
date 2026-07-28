@@ -28,3 +28,56 @@ jobs:
           file: ${{ matrix.image.file }}
           push: false
           tags: apostas-loteria-${{ matrix.image.name }}:ci
+
+  api-smoke:
+    name: API live smoke
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          push: false
+          load: true
+          tags: apostas-loteria-api:ci
+
+      - name: Start API container
+        run: |
+          docker run -d --name apostas-api-smoke \
+            -p 8000:8000 \
+            -e LOTTERIAS_DB_PATH=/app/app/data/loterias.db \
+            -e ENVIRONMENT=test \
+            apostas-loteria-api:ci
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install httpx
+        run: pip install "httpx==0.28.1"
+
+      - name: Wait for /health and run smoke
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health >/dev/null; then
+              echo "API pronta (tentativa $i)"
+              break
+            fi
+            echo "Aguardando API... ($i/30)"
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:8000/health >/dev/null || {
+            echo "API não respondeu a tempo"
+            docker logs apostas-api-smoke || true
+            exit 1
+          }
+          python scripts/smoke_api.py
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f apostas-api-smoke || true

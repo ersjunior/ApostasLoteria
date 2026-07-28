@@ -9,24 +9,20 @@ if str(root_dir) not in sys.path:
 import streamlit as st
 
 from app.combinations.generator import generate_unique_combinations
-from app.core.lotteries import LOTTERIES
 from app.services.dataset import load_dataset
 from app.services.exporter import export_csv
-from app.ui.theme import game_card, page_title, responsible_gaming_footer, section
-from app.ui.theme_manager import apply_theme, init_theme
+from app.services.user_history import SOURCE_COMBINATIONS, add_user_games
+from app.ui.shell import render_app_chrome
+from app.ui.theme import game_card, lottery_badge, page_title, responsible_gaming_footer, section
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
 st.set_page_config(page_title="Combinações Inéditas", layout="wide")
 
-init_theme()
-apply_theme()
+lottery_name, config = render_app_chrome(show_lottery=True)
 
 
-# =========================
-# FUNÇÃO COR PASTEL
-# =========================
 def pastel_color(hex_color: str, alpha=0.15):
     hex_color = hex_color.lstrip("#")
     r = int(hex_color[0:2], 16)
@@ -35,43 +31,19 @@ def pastel_color(hex_color: str, alpha=0.15):
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
-# =========================
-# TÍTULO
-# =========================
 page_title(
     "🔮 Gerador de Combinações Inéditas",
     "Sorteio aleatório de combinações que ainda não apareceram no histórico — sem poder preditivo",
 )
-
-# =========================
-# SELETOR DE LOTERIA
-# =========================
-section("🎲 Seleção da Loteria")
-st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
+lottery_badge(
+    lottery_name,
+    config,
+    detail=f"Combinações com <b>{config['total_bolas']} dezenas</b>.",
+)
 st.info(
     "⚠️ As combinações abaixo são geradas por **sorteio aleatório uniforme**. "
     "Não há modelo de machine learning nem capacidade de previsão — apenas combinações "
     "inéditas em relação ao histórico carregado."
-)
-
-lottery_name = st.selectbox("Escolha a loteria", list(LOTTERIES.keys()))
-
-config = LOTTERIES[lottery_name]
-
-st.markdown(
-    f"""
-    <div style="
-        margin-top:10px;
-        padding:10px 15px;
-        border-left:5px solid {config["color"]};
-        background-color:{pastel_color(config["color"])};
-        border-radius:6px;
-    ">
-        <strong>{config["icon"]} {lottery_name}</strong><br>
-        Combinações com <b>{config["total_bolas"]} dezenas</b>.
-    </div>
-    """,
-    unsafe_allow_html=True,
 )
 
 # =========================
@@ -96,8 +68,10 @@ section("✨ Gerar Combinações")
 
 st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
 
+_games_key = f"combo_games_{config['key']}"
+
 if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
-    games = generate_unique_combinations(
+    st.session_state[_games_key] = generate_unique_combinations(
         df=df,
         n_games=10,
         universo=config["universo"],
@@ -105,6 +79,9 @@ if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
         extra_fields=config.get("extra_fields"),
     )
 
+games = st.session_state.get(_games_key) or []
+
+if games:
     section("📋 Jogos Gerados")
 
     COLS_PER_ROW = 3
@@ -123,22 +100,41 @@ if st.button(f"{config['icon']} Gerar 10 Jogos Inéditos"):
                         status="❌ Nunca sorteado",
                         accent_color=config["color"],
                         background_color=pastel_color(config["color"]),
+                        extras=games[game_index].get("extras"),
                     )
                 game_index += 1
 
-    # =========================
-    # EXPORTAÇÃO
-    # =========================
-    section("📥 Exportar Jogos")
+    section("📥 Exportar / Histórico")
 
     csv = export_csv(games)
 
     st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
-    st.download_button(
-        "📄 Baixar jogos em CSV",
-        csv,
-        f"combinacoes_ineditas_{config['key']}.csv",
-        mime="text/csv",
-    )
+    col_csv, col_hist = st.columns(2)
+
+    with col_csv:
+        st.download_button(
+            "📄 Baixar jogos em CSV",
+            csv,
+            f"combinacoes_ineditas_{config['key']}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
+    with col_hist:
+        if st.button(
+            "💾 Salvar no histórico",
+            key=f"save_combo_{config['key']}",
+            use_container_width=True,
+        ):
+            try:
+                ids = add_user_games(
+                    config["key"],
+                    games,
+                    source=SOURCE_COMBINATIONS,
+                    note=f"Combinações inéditas — {lottery_name}",
+                )
+                st.success(f"{len(ids)} jogo(s) salvos no histórico local.")
+            except Exception as exc:
+                st.error(f"Não foi possível salvar no histórico.\n\n{exc}")
 
 responsible_gaming_footer()

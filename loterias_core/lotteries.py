@@ -223,6 +223,7 @@ LOTTERY_CONFIGS: tuple[LotteryConfig, ...] = (
         file_path="app/data/+Milionária.xlsx",
         portal_modalidade="+Milionaria",
         special_handler="mais_milionaria",
+        extra_fields={"trevos": 2, "trevos_universo": 6},
         price_table={6: 6.00},
     ),
 )

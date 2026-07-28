@@ -1,3 +1,7 @@
+"""Carga e processamento de datasets de loteria (XLSX na borda; transformação em memória)."""
+
+from __future__ import annotations
+
 import os
 import tempfile
 from pathlib import Path
@@ -44,10 +48,8 @@ def enrich_dataset(
 
     df = df[df["jogo"].apply(lambda x: len(x) == total_bolas)]
 
-    # 🔹 CAMPOS EXTRAS
     if extra_fields:
         for field, qtd in extra_fields.items():
-            # Campo único (Timemania)
             if qtd == 1 and field in df.columns:
                 df[field] = df[field].astype(str).str.strip()
                 continue
@@ -62,29 +64,17 @@ def enrich_dataset(
                 axis=1,
             )
 
-    # ✅ RETORNO GARANTIDO EM TODOS OS CASOS
     return df
 
 
 # =========================
 # LOTOMANIA
 # =========================
-def handle_lotomania(file_path: str) -> pd.DataFrame:
-    try:
-        # 🔒 Força leitura como TEXTO, sem inferência de tipo
-        df_raw = pd.read_excel(file_path, engine="openpyxl", dtype=str, converters=lambda x: str)
-    except Exception as e:
-        raise ValueError(
-            "O arquivo da Lotomania não é um XLSX válido.\n\n"
-            "➡️ Baixe novamente no site da Caixa\n"
-            "➡️ Não renomeie HTML para .xlsx\n\n"
-            f"Erro técnico: {str(e)}"
-        ) from e
+def handle_lotomania_df(df_raw: pd.DataFrame) -> pd.DataFrame:
+    """Processa DataFrame já lido da Lotomania (colunas normalizadas ou não)."""
+    df = normalize_columns(df_raw.copy())
 
-    df_raw = normalize_columns(df_raw)
-
-    # 🔎 Detectar colunas bola*
-    dezenas_cols = [c for c in df_raw.columns if c.startswith("bola")]
+    dezenas_cols = [c for c in df.columns if c.startswith("bola")]
 
     if len(dezenas_cols) < 50:
         raise ValueError(
@@ -94,17 +84,15 @@ def handle_lotomania(file_path: str) -> pd.DataFrame:
 
     jogos = []
 
-    for _, row in df_raw.iterrows():
+    for _, row in df.iterrows():
         dezenas = []
 
         for col in dezenas_cols:
             val = str(row[col]).strip()
 
-            # Ignorar lixo do XLSX da Caixa
             if val in ("", "-", "nan", "None"):
                 continue
 
-            # Aceitar apenas números
             if val.isdigit():
                 dezenas.append(int(val))
 
@@ -120,21 +108,34 @@ def handle_lotomania(file_path: str) -> pd.DataFrame:
     return pd.DataFrame({"jogo": jogos})
 
 
+def handle_lotomania(file_path: str) -> pd.DataFrame:
+    try:
+        df_raw = pd.read_excel(file_path, engine="openpyxl", dtype=str)
+    except Exception as e:
+        raise ValueError(
+            "O arquivo da Lotomania não é um XLSX válido.\n\n"
+            "➡️ Baixe novamente no site da Caixa\n"
+            "➡️ Não renomeie HTML para .xlsx\n\n"
+            f"Erro técnico: {str(e)}"
+        ) from e
+
+    return handle_lotomania_df(df_raw)
+
+
 # =========================
 # SUPER SETE
 # =========================
-def handle_supersete(file_path: str) -> pd.DataFrame:
-    df_raw = pd.read_excel(file_path, dtype=str)
-    df_raw = normalize_columns(df_raw)
+def handle_supersete_df(df_raw: pd.DataFrame) -> pd.DataFrame:
+    df = normalize_columns(df_raw.copy())
 
     colunas = [f"coluna{i}" for i in range(1, 8)]
 
-    if not all(col in df_raw.columns for col in colunas):
+    if not all(col in df.columns for col in colunas):
         raise ValueError(f"Colunas inválidas do Super Sete. Esperado: {colunas}")
 
     jogos = []
 
-    for _, row in df_raw.iterrows():
+    for _, row in df.iterrows():
         dezenas = []
 
         for col in colunas:
@@ -152,25 +153,28 @@ def handle_supersete(file_path: str) -> pd.DataFrame:
     return pd.DataFrame({"jogo": jogos})
 
 
+def handle_supersete(file_path: str) -> pd.DataFrame:
+    return handle_supersete_df(pd.read_excel(file_path, dtype=str))
+
+
 # =========================
 # +MILIONÁRIA
 # =========================
-def handle_mais_milionaria(file_path: str) -> pd.DataFrame:
-    df_raw = pd.read_excel(file_path, dtype=str)
-    df_raw = normalize_columns(df_raw)
+def handle_mais_milionaria_df(df_raw: pd.DataFrame) -> pd.DataFrame:
+    df = normalize_columns(df_raw.copy())
 
     dezenas_cols = [f"bola{i}" for i in range(1, 7)]
     trevos_cols = ["trevo1", "trevo2"]
 
-    if not all(col in df_raw.columns for col in dezenas_cols):
+    if not all(col in df.columns for col in dezenas_cols):
         raise ValueError(f"Colunas de dezenas inválidas. Esperado: {dezenas_cols}")
 
-    if not all(col in df_raw.columns for col in trevos_cols):
+    if not all(col in df.columns for col in trevos_cols):
         raise ValueError(f"Colunas de trevos inválidas. Esperado: {trevos_cols}")
 
     jogos = []
 
-    for _, row in df_raw.iterrows():
+    for _, row in df.iterrows():
         dezenas = []
         trevos = []
 
@@ -193,8 +197,87 @@ def handle_mais_milionaria(file_path: str) -> pd.DataFrame:
     return pd.DataFrame(jogos)
 
 
+def handle_mais_milionaria(file_path: str) -> pd.DataFrame:
+    return handle_mais_milionaria_df(pd.read_excel(file_path, dtype=str))
+
+
 # =========================
-# LOADER
+# DUPLA SENA (dois sorteios)
+# =========================
+def _handle_multiple_draws(df_raw: pd.DataFrame, total_bolas: int) -> pd.DataFrame:
+    df = normalize_columns(df_raw.copy())
+    all_rows = []
+
+    for draw in [1, 2]:
+        dezenas_cols = [f"bola{i}sorteio{draw}" for i in range(1, total_bolas + 1)]
+
+        if not all(col in df.columns for col in dezenas_cols):
+            raise ValueError(f"Colunas do sorteio {draw} não encontradas: {dezenas_cols}")
+
+        temp = df[dezenas_cols].copy()
+        temp.columns = [f"bola{i}" for i in range(1, total_bolas + 1)]
+
+        temp["jogo"] = temp.apply(
+            lambda x: sorted(int(v) for v in x.tolist() if v is not None and v != "-" and v != ""),
+            axis=1,
+        )
+
+        if "concurso" in df.columns:
+            temp["concurso"] = df["concurso"].values
+        temp["draw_index"] = draw
+        all_rows.append(
+            temp[["jogo"] + (["concurso"] if "concurso" in temp.columns else []) + ["draw_index"]]
+        )
+
+    return pd.concat(all_rows, ignore_index=True)
+
+
+# =========================
+# PIPELINE EM MEMÓRIA
+# =========================
+def build_dataset_from_dataframe(
+    df_raw: pd.DataFrame,
+    *,
+    total_bolas: int,
+    extra_fields: dict | None = None,
+    multiple_draws: bool = False,
+    special_handler: str | None = None,
+) -> pd.DataFrame:
+    """
+    Transforma um DataFrame bruto (já lido) no dataset canônico com coluna `jogo`.
+    Não lê nem grava Excel.
+    """
+    df = normalize_columns(df_raw.copy())
+
+    if special_handler == "lotomania":
+        return handle_lotomania_df(df)
+    if special_handler == "supersete":
+        return handle_supersete_df(df)
+    if special_handler == "mais_milionaria":
+        return handle_mais_milionaria_df(df)
+    if multiple_draws:
+        return _handle_multiple_draws(df, total_bolas)
+
+    return enrich_dataset(df, total_bolas, extra_fields)
+
+
+def _read_excel_once(file_path: str, *, special_handler: str | None) -> pd.DataFrame:
+    if special_handler == "lotomania":
+        try:
+            return pd.read_excel(file_path, engine="openpyxl", dtype=str)
+        except Exception as e:
+            raise ValueError(
+                "O arquivo da Lotomania não é um XLSX válido.\n\n"
+                "➡️ Baixe novamente no site da Caixa\n"
+                "➡️ Não renomeie HTML para .xlsx\n\n"
+                f"Erro técnico: {str(e)}"
+            ) from e
+
+    return pd.read_excel(file_path, dtype=str)
+
+
+# =========================
+# LOADER (path → uma leitura → memória)
 # =========================
 def load_dataset(
     file_path: str,
@@ -207,65 +290,14 @@ def load_dataset(
     if not Path(file_path).exists():
         raise FileNotFoundError(f"Dataset não encontrado: {file_path}")
 
-    # =========================
-    # CASOS ESPECIAIS
-    # =========================
-    if special_handler == "lotomania":
-        return handle_lotomania(file_path)
-
-    if special_handler == "supersete":
-        return handle_supersete(file_path)
-
-    if special_handler == "mais_milionaria":
-        return handle_mais_milionaria(file_path)
-
-    # ⛔ A PARTIR DAQUI LOTOMANIA NÃO PASSA
-    df_raw = pd.read_excel(file_path, dtype=str)
-    df_raw = normalize_columns(df_raw)
-
-    # =========================
-    # LEITURA PADRÃO (SEGURA)
-    # =========================
-    df_raw = pd.read_excel(file_path, dtype=str)
-    df_raw = normalize_columns(df_raw)
-
-    # =========================
-    # CASO ESPECIAL: DUPLA SENA
-    # =========================
-    if multiple_draws:
-        all_rows = []
-
-        for draw in [1, 2]:
-            dezenas_cols = [f"bola{i}sorteio{draw}" for i in range(1, total_bolas + 1)]
-
-            if not all(col in df_raw.columns for col in dezenas_cols):
-                raise ValueError(f"Colunas do sorteio {draw} não encontradas: {dezenas_cols}")
-
-            temp = df_raw[dezenas_cols].copy()
-            temp.columns = [f"bola{i}" for i in range(1, total_bolas + 1)]
-
-            temp["jogo"] = temp.apply(
-                lambda x: sorted(
-                    int(v) for v in x.tolist() if v is not None and v != "-" and v != ""
-                ),
-                axis=1,
-            )
-
-            if "concurso" in df_raw.columns:
-                temp["concurso"] = df_raw["concurso"].values
-            temp["draw_index"] = draw
-            all_rows.append(
-                temp[
-                    ["jogo"] + (["concurso"] if "concurso" in temp.columns else []) + ["draw_index"]
-                ]
-            )
-
-        return pd.concat(all_rows, ignore_index=True)
-
-    # =========================
-    # RETORNO FINAL DO DF
-    # =========================
-    return enrich_dataset(df_raw, total_bolas, extra_fields)
+    df_raw = _read_excel_once(file_path, special_handler=special_handler)
+    return build_dataset_from_dataframe(
+        df_raw,
+        total_bolas=total_bolas,
+        extra_fields=extra_fields,
+        multiple_draws=multiple_draws,
+        special_handler=special_handler,
+    )
 
 
 # =========================
@@ -299,14 +331,10 @@ def _config_kwargs(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def process_raw_dataset(df_raw: pd.DataFrame, config: dict[str, Any]) -> pd.DataFrame:
-    """Normaliza, valida schema e enriquece um DataFrame bruto (upload ou download)."""
+    """Normaliza, valida schema e enriquece um DataFrame bruto em memória (sem staging XLSX)."""
     df = normalize_columns(df_raw.copy())
     validate_dataset_schema(df, config)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = Path(tmpdir) / "staging.xlsx"
-        df.to_excel(tmp_path, index=False, engine="openpyxl")
-        return load_dataset(str(tmp_path), **_config_kwargs(config))
+    return build_dataset_from_dataframe(df, **_config_kwargs(config))
 
 
 def persist_dataset(
