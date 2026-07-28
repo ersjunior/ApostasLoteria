@@ -82,6 +82,34 @@ def test_verify_out_of_range_returns_422(client, sample_dataset):
     assert body["code"] == "VALIDATION_ERROR"
 
 
+def test_verify_duplicate_numbers_returns_422(client, sample_dataset):
+    response = client.post("/verify/", json={"numbers": [1, 1, 2, 3, 4, 5]})
+    assert response.status_code == 422
+    body = response.json()
+    assert body["code"] == "VALIDATION_ERROR"
+
+
+def test_verify_existing_game(client, sample_dataset):
+    response = client.post("/verify/", json={"numbers": [1, 3, 5, 7, 9, 11]})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["found"] is True
+    assert body["numbers"] == [1, 3, 5, 7, 9, 11]
+
+
+def test_verify_new_game(client, sample_dataset):
+    response = client.post("/verify/", json={"numbers": [7, 14, 21, 28, 35, 42]})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["found"] is False
+
+
+def test_verify_dataset_missing_returns_404(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("api.services.core.DATASET_PATH", str(tmp_path / "missing.csv"))
+    response = client.post("/verify/", json={"numbers": [1, 2, 3, 4, 5, 6]})
+    assert response.status_code == 404
+
+
 def test_forecast_n_above_max_returns_422(client, sample_dataset):
     response = client.get("/forecast/?n=101")
     assert response.status_code == 422
@@ -95,6 +123,62 @@ def test_forecast_n_zero_returns_422(client, sample_dataset):
     assert response.status_code == 422
     body = response.json()
     assert body["code"] == "VALIDATION_ERROR"
+
+
+def test_forecast_success(client, sample_dataset):
+    response = client.get("/forecast/?n=3")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["n_games"] == 3
+    assert len(body["games"]) == 3
+    for game in body["games"]:
+        assert len(game["dezenas"]) == 6
+        assert game["dezenas"] == sorted(game["dezenas"])
+
+
+def test_forecast_dataset_missing_returns_404(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("api.services.core.DATASET_PATH", str(tmp_path / "missing.csv"))
+    response = client.get("/forecast/?n=1")
+    assert response.status_code == 404
+
+
+def test_get_dataset_missing_returns_404(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("api.services.core.DATASET_PATH", str(tmp_path / "missing.csv"))
+    response = client.get("/dataset/")
+    assert response.status_code == 404
+
+
+def test_get_dataset_success(client, sample_dataset):
+    response = client.get("/dataset/")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total_records"] == 2
+    assert "jogo" in body["columns"]
+    assert body["last_update"] is not None
+
+
+@patch("api.routes.dataset.update_dataset")
+def test_post_dataset_updates_with_mocked_scrape(mock_update, client, sample_dataset, megasena_fixture):
+    raw = pd.read_excel(megasena_fixture)
+    mock_update.return_value = raw.assign(
+        jogo=raw.apply(
+            lambda r: sorted([r[f"Bola{i}"] for i in range(1, 7)]),
+            axis=1,
+        )
+    )
+    response = client.post("/dataset/")
+    assert response.status_code == 200
+    body = response.json()
+    assert "atualizado" in body["message"].lower()
+    assert body["total_records"] == 2
+    mock_update.assert_called_once()
+
+
+@patch("api.routes.dataset.update_dataset")
+def test_post_dataset_scrape_error_returns_500(mock_update, client, sample_dataset):
+    mock_update.side_effect = RuntimeError("scrape falhou")
+    response = client.post("/dataset/")
+    assert response.status_code == 500
 
 
 @patch("api.routes.dataset.update_dataset")
@@ -123,3 +207,4 @@ def test_rate_limit_forecast(mock_generate, mock_load, client, sample_dataset):
     assert responses[1].status_code == 200
     assert responses[2].status_code == 429
     assert responses[2].json()["code"] == "RATE_LIMIT_EXCEEDED"
+

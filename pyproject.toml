@@ -85,3 +85,28 @@ disallow_untyped_defs = false
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+addopts = [
+    "--cov=app",
+    "--cov=api",
+    "--cov=loterias_core",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-fail-under=60",
+]
+
+[tool.coverage.run]
+source = ["app", "api", "loterias_core"]
+omit = [
+    "app/Home.py",
+    "app/pages/*",
+    "app/ui/*",
+    "app/ml/*",
+    "app/combinations/*",
+    "tests/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
