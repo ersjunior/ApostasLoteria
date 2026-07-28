@@ -10,10 +10,13 @@ build/
 .eggs/
 
 # Virtual Environment
-.env/
+.venv/
 venv/
 ENV/
 env/
+
+# Secrets (variáveis de ambiente locais — não confundir com .venv/)
+.env
 
 # IDE
 .vscode/

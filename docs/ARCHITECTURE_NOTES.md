@@ -173,7 +173,7 @@ CMD ["streamlit", "run", "app/Home.py", "--server.address=0.0.0.0", "--server.po
 
 O multipage do Streamlit usa `app/Home.py` como script principal e descobre páginas em `app/pages/`.
 
-`COMO_EXECUTAR.md` está **desatualizado** em dois pontos: instrui `streamlit run app/main.py` (linha 39) e na seção de troubleshooting corrige para `app/Home.py` (linha 166). Também menciona erroneamente `uvicorn api.Home:app` (linha 178).
+`COMO_EXECUTAR.md` documenta os entrypoints corretos (`streamlit run app/Home.py`, `uvicorn api.main:app`), venv `.venv` e os dois fluxos de ingestão (upload XLSX vs `POST /dataset/` da API).
 
 ---
 
@@ -374,5 +374,5 @@ Não há rota raiz `/` nem health check explícito. Docs automáticas: `/docs`, 
 2. **Dois pipelines de dados** (XLSX multi-loteria vs CSV Mega-Sena) são a principal fonte de inconsistência.
 3. **Domínio compartilhado** (`validator`, `forecast`) já vive em `app/`; API deveria alinhar loader de dataset ao mesmo módulo.
 4. **Código morto / órfão:** `lottery_selector.py`, `cache.py`, `report.py`, `save_dataset`, wrappers em `api/services/core.py`.
-5. **Documentação desatualizada:** `COMO_EXECUTAR.md` (`app/main.py`, `dfs.xlsx`, botão “Atualizar Dataset” inexistente no Streamlit atual).
+5. **Documentação:** `README.md` e `COMO_EXECUTAR.md` alinhados aos entrypoints (`app/Home.py`, `uvicorn api.main:app`), venv `.venv`, Python 3.11+ e caminhos reais de dataset.
 6. **Testes** não refletem implementação atual de forecast e statistics.

@@ -2,63 +2,85 @@
 
 ## Pré-requisitos
 
-- Python 3.11 ou superior instalado
+- Python **3.11** ou superior instalado
 - pip (geralmente vem com Python)
 
-## Passo 1: Ativar o Ambiente Virtual
+## Passo 1: Criar e ativar o ambiente virtual
 
-Se você já tem um ambiente virtual criado:
+Na **raiz do repositório**:
 
-**Windows:**
+```bash
+python -m venv .venv
+```
+
+**Windows (PowerShell):**
+
 ```powershell
-.env\Scripts\activate
+.venv\Scripts\activate
 ```
 
-**Linux/Mac:**
+**Linux/macOS:**
+
 ```bash
-source .env/bin/activate
+source .venv/bin/activate
 ```
 
-Se ainda não criou o ambiente virtual:
-```bash
-python -m venv .env
-```
-E depois ative conforme acima.
+> Use `.venv` (e não `.env`) para o ambiente virtual — `.env` é reservado para arquivos de segredos locais.
 
-## Passo 2: Instalar Dependências
-
-Instale todas as dependências necessárias:
+## Passo 2: Instalar dependências
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Passo 3: Executar a Aplicação Streamlit
+## Passo 3: Executar a aplicação Streamlit
+
+A partir da **raiz do repositório**:
 
 ```bash
-streamlit run app/main.py
+streamlit run app/Home.py
 ```
 
-A aplicação será aberta automaticamente no navegador em `http://localhost:8501`
+A aplicação abre em `http://localhost:8501`.
 
-### Primeira Execução - Importante! ⚠️
+### Primeira execução (Streamlit) ⚠️
 
-Na primeira vez que executar:
+O Streamlit **não** baixa dados automaticamente. É necessário carregar a base oficial de cada loteria:
 
-1. A aplicação vai abrir mostrando um aviso de que o dataset não foi encontrado
-2. Na **barra lateral esquerda**, clique no botão **"🔄 Atualizar Dataset"**
-3. Aguarde alguns segundos enquanto os dados são baixados da Caixa Econômica Federal
-4. Após o download, você verá a mensagem "Base atualizada com sucesso!"
-5. Agora você pode navegar pelas páginas:
-   - **🎯 Verificação de Jogos** - Verifica se um jogo já foi sorteado
-   - **🔮 Previsão de Jogos** - Gera previsões usando ML
-   - **📊 Estatísticas** - Visualiza frequências e probabilidades
+1. Na **barra lateral**, use o link **"⬇️ Baixar base atualizada"** (site da Caixa) e faça o download do **XLSX** da loteria desejada.
+2. Em **"📤 Upload Manual do XLSX"**, selecione a loteria correspondente e envie o arquivo.
+3. Confira o **"📂 Status das Bases"** na página inicial — loterias com arquivo carregado aparecem com ✅.
+4. Navegue pelas páginas no menu lateral:
+   - **📊 Estatísticas**
+   - **🎯 Verificação**
+   - **🔮 Forecast** (combinações inéditas)
+   - **👨‍💻 Feito por**
+
+### Onde os dados ficam (Streamlit)
+
+Cada loteria é gravada em um XLSX próprio sob `app/data/`, conforme `app/core/lotteries.py`:
+
+| Loteria | Arquivo |
+|---------|---------|
+| Mega-Sena | `app/data/Mega-Sena.xlsx` |
+| Lotofácil | `app/data/Lotofácil.xlsx` |
+| Quina | `app/data/Quina.xlsx` |
+| Dupla Sena | `app/data/Dupla Sena.xlsx` |
+| Lotomania | `app/data/Lotomania.xlsx` |
+| Dia de Sorte | `app/data/Dia de Sorte.xlsx` |
+| Timemania | `app/data/Timemania.xlsx` |
+| Super Sete | `app/data/Super Sete.xlsx` |
+| +Milionária | `app/data/+Milionária.xlsx` |
+
+Esses arquivos são ignorados pelo Git (`.gitignore`).
 
 ---
 
 ## Opção 2: API REST (FastAPI)
 
-### Passo 1: Instalar Dependências da API
+A API é **independente** do Streamlit: não há chamadas HTTP entre eles. Ela opera hoje apenas com **Mega-Sena**, em formato **CSV** separado do fluxo XLSX da interface.
+
+### Passo 1: Instalar dependências da API
 
 ```bash
 pip install -r requirements-api.txt
@@ -66,79 +88,100 @@ pip install -r requirements-api.txt
 
 ### Passo 2: Executar a API
 
-**A partir da raiz do projeto:**
+A partir da **raiz do repositório**:
+
 ```bash
 uvicorn api.main:app --reload
 ```
 
-**Ou se preferir, a partir do diretório api:**
-```bash
-cd api
-uvicorn main:app --reload
-```
+A API fica em `http://localhost:8000`.
 
-A API estará disponível em `http://localhost:8000`
-
-### Passo 3: Acessar a Documentação Interativa
-
-Abra no navegador:
+### Passo 3: Documentação interativa
 
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
-### Primeira Execução da API ⚠️
+### Primeira execução (API) ⚠️
 
-Antes de usar os endpoints, você precisa criar o dataset:
+Antes de usar `/verify/` ou `/forecast/`, crie o dataset da Mega-Sena:
 
-1. Acesse: http://localhost:8000/docs
-2. Encontre o endpoint `POST /dataset/`
-3. Clique em "Try it out" e depois em "Execute"
-4. Isso vai baixar e criar o arquivo CSV necessário
+1. Acesse http://localhost:8000/docs
+2. Abra `POST /dataset/`
+3. Clique em **Try it out** → **Execute**
 
-### Endpoints Disponíveis:
+Isso baixa o XLSX oficial da Mega-Sena e grava **`app/data/megasena.csv`** (formato usado somente pela API).
 
-- **POST /verify/** - Verificar se um jogo foi sorteado
-  ```json
-  {
-    "numbers": [1, 5, 12, 23, 34, 56]
-  }
-  ```
+Para consultar metadados do CSV: `GET /dataset/`.
 
-- **GET /forecast/?n=10** - Gerar previsões (n = número de jogos)
+### Endpoints disponíveis
 
-- **GET /dataset/** - Informações sobre o dataset
-
-- **POST /dataset/** - Atualizar o dataset
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/verify/` | Verifica se um jogo da Mega-Sena já foi sorteado (`{"numbers": [1, 5, 12, 23, 34, 56]}`) |
+| `GET` | `/forecast/?n=10` | Gera até 100 combinações inéditas da Mega-Sena |
+| `GET` | `/dataset/` | Informações sobre o CSV carregado |
+| `POST` | `/dataset/` | Baixa e atualiza `app/data/megasena.csv` |
 
 ---
 
-## 🐳 Opção 3: Usando Docker
+## Dois caminhos de ingestão de dados
 
-### Streamlit:
+| Caminho | Onde | Como | Arquivo gerado |
+|---------|------|------|----------------|
+| **Upload manual (Streamlit)** | Barra lateral da Home | Download do XLSX no site da Caixa + upload | `app/data/<Loteria>.xlsx` (uma base por loteria) |
+| **Download automático (API)** | `POST /dataset/` no Swagger | Scraper baixa Mega-Sena da Caixa | `app/data/megasena.csv` (somente Mega-Sena) |
+
+O botão **"Atualizar Dataset"** **não existe** na interface Streamlit atual. Atualização automática via scraper está disponível **apenas pela API**.
+
+---
+
+## 🐳 Opção 3: Docker (recomendado)
+
+Na raiz do repositório:
 
 ```bash
-docker build -f docker/Dockerfile.streamlit -t megasena-streamlit .
-docker run -p 8501:8501 megasena-streamlit
+docker compose up --build
 ```
 
-### API:
+| Serviço | URL |
+|---------|-----|
+| Streamlit | http://localhost:8501 |
+| API | http://localhost:8000 |
+| Swagger | http://localhost:8000/docs |
+
+Dados em `app/data/` persistem no volume Docker `apostas-data`.
+
+Apenas Streamlit:
 
 ```bash
-docker build -f docker/Dockerfile.api -t megasena-api .
-docker run -p 8000:8000 megasena-api
+docker compose up --build streamlit
+```
+
+Apenas API:
+
+```bash
+docker compose up --build api
+```
+
+Build manual (sem Compose):
+
+```bash
+docker build -f docker/Dockerfile.streamlit -t loterias-analyzer-streamlit .
+docker run --rm -p 8501:8501 -v loterias-data:/app/app/data loterias-analyzer-streamlit
+
+docker build -f docker/Dockerfile.api -t loterias-analyzer-api .
+docker run --rm -p 8000:8000 -v loterias-data:/app/app/data loterias-analyzer-api
 ```
 
 ---
 
-## 🧪 Executar Testes
-
-Para executar os testes unitários:
+## 🧪 Executar testes
 
 ```bash
 pytest
 ```
 
-Ou com mais detalhes:
+Com mais detalhes:
 
 ```bash
 pytest -v
@@ -146,43 +189,52 @@ pytest -v
 
 ---
 
-## ❓ Solução de Problemas
+## ❓ Solução de problemas
 
-### Erro: "Dataset não encontrado"
+### Erro: base/dataset não encontrado (Streamlit)
 
-**Solução:** Clique no botão "🔄 Atualizar Dataset" na barra lateral (Streamlit) ou execute `POST /dataset/` (API)
+**Solução:** faça upload do XLSX oficial na barra lateral da Home (`app/Home.py`) para a loteria desejada. Verifique **"📂 Status das Bases"**.
 
-### Erro: "ModuleNotFoundError"
+### Erro: dataset não encontrado (API)
 
-**Solução:** Verifique se todas as dependências foram instaladas:
+**Solução:** execute `POST /dataset/` em http://localhost:8000/docs para gerar `app/data/megasena.csv`.
+
+### Erro: `ModuleNotFoundError`
+
+**Solução:** ative `.venv`, instale dependências e execute os comandos a partir da **raiz** do projeto:
+
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-api.txt   # se for usar a API
 ```
 
-### Erro ao executar Streamlit
+### Erro ao executar Streamlit (`app/main.py` não encontrado)
 
-**Solução:** Certifique-se de estar na raiz do projeto:
+**Solução:** o entrypoint correto é `app/Home.py` (não existe `app/main.py`):
+
 ```bash
 streamlit run app/Home.py
 ```
 
 ### Porta já em uso
 
-**Solução:** Use outra porta:
+Streamlit em outra porta:
+
 ```bash
 streamlit run app/Home.py --server.port 8502
 ```
 
-Ou para a API:
+API em outra porta:
+
 ```bash
-uvicorn api.Home:app --reload --port 8001
+uvicorn api.main:app --reload --port 8001
 ```
 
 ---
 
-## 📝 Notas Importantes
+## 📝 Notas importantes
 
-- O dataset é armazenado em `app/data/dfs.xlsx`
-- O dataset é atualizado automaticamente quando você clica em "Atualizar Dataset"
-- As previsões são baseadas em machine learning e **NÃO garantem resultados reais**
-- Este projeto é apenas para fins educacionais
+- **Streamlit:** bases em `app/data/*.xlsx` (upload manual, multi-loteria).
+- **API:** base em `app/data/megasena.csv` (download via `POST /dataset/`, Mega-Sena).
+- Forecast gera combinações **aleatórias inéditas** — não há modelo de machine learning em produção.
+- Projeto com finalidade **educacional**; sorteios são eventos aleatórios.

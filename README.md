@@ -1,7 +1,7 @@
 
 # 🎰 Loterias Analyzer
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red)
 ![Status](https://img.shields.io/badge/Status-Ativo-success)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -52,7 +52,7 @@ O projeto oferece:
 - Suporte a campos extras e múltiplos sorteios
 - Resultados exibidos em cards organizados
 
-### 🔮 Forecast (Jogos Inéditos)
+### 🔮 Forecast (combinações inéditas)
 - Geração de jogos nunca sorteados
 - Respeita regras específicas de cada loteria
 - Exportação em CSV
@@ -65,50 +65,56 @@ O projeto oferece:
 - Simulação de custos e probabilidades
 
 ### 📄 Relatórios
-- Exportação de relatórios estatísticos em PDF
-- Exportação de jogos em CSV
+- Exportação de jogos em CSV (página Forecast)
 
 ---
 
 ## 🧭 Como Utilizar
 
-### 1️⃣ Baixar a base oficial
+### 1️⃣ Obter a base oficial
 Acesse o site da Caixa Econômica Federal:
 
 https://loterias.caixa.gov.br/
 
-Faça o download do arquivo **XLSX** da loteria desejada.
+Faça o download do arquivo **XLSX** da loteria desejada (link também disponível na barra lateral da Home).
 
 ---
 
-### 2️⃣ Upload do XLSX
-Na página **Home**:
-1. Selecione a loteria
-2. Faça upload do arquivo XLSX
-3. Aguarde a confirmação
+### 2️⃣ Upload do XLSX (Streamlit)
+Na página **Home** (`app/Home.py`), barra lateral **"📤 Upload Manual do XLSX"**:
+1. Selecione a loteria correspondente ao arquivo
+2. Envie o XLSX oficial
+3. Confira **"📂 Status das Bases"** na Home (✅ = base carregada)
+
+Cada loteria é salva em `app/data/<Nome da Loteria>.xlsx` (ex.: `app/data/Mega-Sena.xlsx`).
 
 ⚠️ Use apenas arquivos oficiais da Caixa.
 
 ---
 
+### 2️⃣ bis — Atualização via API (opcional, só Mega-Sena)
+
+Se você usar a **API FastAPI** em vez da interface, o dataset é outro arquivo: `app/data/megasena.csv`. Execute `POST /dataset/` em http://localhost:8000/docs para baixar a Mega-Sena automaticamente. Esse fluxo **não** substitui o upload XLSX do Streamlit.
+
+---
+
 ### 3️⃣ Verificação
 - Vá até **🎯 Verificação**
-- Insira seus jogos
+- Selecione a loteria e insira seus jogos
 - Veja se já foram sorteados
 
 ---
 
 ### 4️⃣ Forecast
 - Vá até **🔮 Forecast**
-- Gere jogos inéditos
-- Exporte os resultados
+- Gere combinações inéditas
+- Exporte os resultados em CSV
 
 ---
 
 ### 5️⃣ Estatísticas
 - Vá até **📊 Estatísticas**
 - Explore gráficos, probabilidades e custos
-- Gere relatório em PDF
 
 ---
 
@@ -119,32 +125,33 @@ Na página **Home**:
 │   ├── routes/
 │   └── services/
 ├── app/                            # Aplicação Streamlit
-├───── core/
-│        └── lotteries.py
-├───── data/
-│        └── reports/
-|              └── relatórios.pdf 
-│        └── datasets.xlsx 
-├───── ml/
-│        └── forecast.py
-├───── pages/
-│        ├── 1_📊_Estatísticas.py
-│        ├── 2_🎯_Verificação.py
-│        ├── 3_🔮_Forecast.py
-│        └── 4_👨‍💻_Feito por.py
-├───── services/
-|        ├── cache.py
-│        ├── dataset.py
-|        ├── exporter.py
-│        ├── report.py
-│        ├── scraper.py
-│        ├── statistics.py
-│        └── validator.py
-├───── ui/
-|        ├── lottery_selector.py
-│        ├── theme_manager.py
-│        └── theme.py
-├───── Home.py
+│   ├── core/
+│   │   └── lotteries.py
+│   ├── data/                       # Bases XLSX (upload) e CSV da API
+│   │   ├── .gitkeep
+│   │   ├── Mega-Sena.xlsx          # um XLSX por loteria (gerado no upload)
+│   │   ├── Lotofácil.xlsx
+│   │   └── …
+│   ├── ml/
+│   │   └── forecast.py
+│   ├── pages/
+│   │   ├── 1_📊_Estatísticas.py
+│   │   ├── 2_🎯_Verificação.py
+│   │   ├── 3_🔮_Forecast.py
+│   │   └── 4_👨‍💻_Feito por.py
+│   ├── services/
+│   │   ├── cache.py
+│   │   ├── dataset.py
+│   │   ├── exporter.py
+│   │   ├── report.py
+│   │   ├── scraper.py
+│   │   ├── statistics.py
+│   │   └── validator.py
+│   ├── ui/
+│   │   ├── lottery_selector.py
+│   │   ├── theme_manager.py
+│   │   └── theme.py
+│   └── Home.py                     # entrypoint Streamlit
 ├── docker/                         # Dockerfiles
 │        ├── Dockerfile.api
 │        └── Dockerfile.streamlit
@@ -167,7 +174,7 @@ Na página **Home**:
 
 ## ⚙️ Tecnologias
 
-- 🐍 Python 3.10+
+- 🐍 Python 3.11+
 - 🎨 Streamlit
 - 📊 Pandas & NumPy
 - 📈 Plotly
