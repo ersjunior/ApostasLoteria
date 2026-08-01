@@ -224,9 +224,7 @@ if _bulk_results:
         # Linha 2: quantos jogos do lote tiveram ≥1 acerto na faixa —
         # NÃO soma volumes entre jogos (isso inflava além do nº de sorteios da base).
         jogos_por_faixa = {
-            tier: sum(
-                1 for r in _bulk_results if (r.get("tier_counts") or {}).get(tier, 0) > 0
-            )
+            tier: sum(1 for r in _bulk_results if (r.get("tier_counts") or {}).get(tier, 0) > 0)
             for tier in HIT_TIERS
         }
 
@@ -260,9 +258,7 @@ if _bulk_results:
         results_per_row = 5
         for i in range(0, len(_bulk_results), results_per_row):
             cols = st.columns(results_per_row)
-            for col, item in zip(
-                cols, _bulk_results[i : i + results_per_row], strict=False
-            ):
+            for col, item in zip(cols, _bulk_results[i : i + results_per_row], strict=False):
                 with col:
                     tiers = item.get("tier_counts") or {}
                     # Duas quebras forçam parágrafo no Markdown do Streamlit
