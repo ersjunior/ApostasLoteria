@@ -602,6 +602,10 @@ Constrói o conjunto de jogos já sorteados, então amostra combinações aleat�
 
 **`check_game(dezenas, df, extra_values=None)`** — verifica se um jogo já saiu. É **defensivo**: blinda contra DataFrame vazio/sem coluna `jogo`, normaliza a entrada e cada jogo do dataset (listas, tuplas ou strings `"[...]"`). Quando há extras, exige coincidência tanto das dezenas quanto de cada campo extra.
 
+**`count_hit_tiers(dezenas, df, tiers=(11..15))`** — para cada sorteio histórico, calcula a interseção com a aposta e conta quantas vezes o número de acertos cai exatamente em cada faixa (padrão 11–15). Útil para Lotofácil; modalidades com menos de 11 dezenas no sorteio retornam zeros.
+
+**`analyze_game(...)`** — combina `check_game` + `count_hit_tiers` e expõe também `hits_above_11` (True se houver volume em 12, 13, 14 ou 15).
+
 ### 11.9 `scraper.py` — download resiliente da Caixa
 
 Baixa bases oficiais com **retry exponencial**, **timeout** e **fallback entre fontes**.
@@ -744,7 +748,7 @@ Gerencia o histórico local (SQLite, sem conta de usuário).
 - **Seção "🔎 Filtro"** — `selectbox` **"Loteria"** com opção "Todas" + todas as modalidades.
 - **Seção "📋 Jogos salvos"** — `st.dataframe` com colunas ID, Data, Loteria, Dezenas, Extras, Origem e Nota (limite de 200 jogos, mais recentes primeiro). Se vazio, informa como salvar jogos.
 - **Botões** — **"⬇️ Baixar histórico (CSV)"** (via `export_history_csv`) e **"🗑️ Limpar histórico filtrado"**.
-- **Seção "🔍 Verificar jogos salvos"** — verificação **em lote** com slider **"Quantidade de jogos a verificar"** (1 a `min(100, nº de jogos)`, padrão 10 — ou o total disponível, se menor). Ao clicar em **"🔍 Verificar {n} jogo(s)"** (rótulo dinâmico), os jogos são ordenados **por ID crescente**, os `n` primeiros são conferidos com `check_game` (datasets carregados uma única vez por modalidade e reaproveitados) e o resultado é apresentado com três métricas de resumo (**✅ Já sorteados**, **🔍 Nunca sorteados**, **⚠️ Com erro**) seguidas de cards de status em grade de 5 colunas. Bases indisponíveis não interrompem a página: o jogo é marcado como "Base indisponível". Os resultados ficam no `session_state` e são invalidados ao trocar o filtro de loteria ou remover jogos.
+- **Seção "🔍 Verificar jogos salvos"** — verificação **em lote** com slider **"Quantidade de jogos a verificar"** (1 a `min(100, nº de jogos)`, padrão 10 — ou o total disponível, se menor). Ao clicar em **"🔍 Verificar {n} jogo(s)"** (rótulo dinâmico), os jogos são ordenados **por ID crescente**, os `n` primeiros são analisados via `analyze_game` (match exato + volumes por faixa de acertos 11–15; datasets carregados uma única vez por modalidade). O resumo tem duas linhas de métricas: (1) **Já sorteados** | **Nunca sorteados** | **Sorteados com mais de 11 dezenas** | **Com erro**; (2) **quantos jogos** do lote tiveram ≥1 acerto em cada faixa **15 / 14 / 13 / 12 / 11** (não soma volumes entre jogos). Cada card de jogo mostra status e, em linhas separadas, o volume **daquele jogo** por faixa (`N dezenas: volume` = quantos sorteios da base bateram exatamente N dezenas). Bases indisponíveis não interrompem a página. Resultados ficam no `session_state` e são invalidados ao trocar o filtro de loteria ou remover jogos.
 - **Seção "⚙️ Ações por jogo"** — `selectbox` de ID e dois botões: **"🔍 Verificar novamente"** (recarrega o dataset e roda `check_game` para um jogo específico) e **"🗑️ Apagar este jogo"** (`delete_user_game`).
 - Rodapé de jogo responsável.
 

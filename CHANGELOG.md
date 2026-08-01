@@ -9,7 +9,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Added
 
-- Página **📜 Histórico**: nova seção **"🔍 Verificar jogos salvos"** com verificação **em lote**. Um slider **"Quantidade de jogos a verificar"** (1 a `min(100, nº de jogos)`, padrão 10) permite conferir livremente de 1 a 100 jogos por ordem de **ID crescente**; o resultado traz métricas de resumo (já sorteados / nunca sorteados / com erro) e cards de status. Datasets são carregados uma única vez por modalidade e bases indisponíveis não interrompem a página. A verificação individual por ID (**"🔍 Verificar novamente"**) foi mantida em "Ações por jogo".
+- Página **📜 Histórico**: nova seção **"🔍 Verificar jogos salvos"** com verificação **em lote**. Um slider **"Quantidade de jogos a verificar"** (1 a `min(100, nº de jogos)`, padrão 10) permite conferir livremente de 1 a 100 jogos por ordem de **ID crescente**; o resultado traz métricas de resumo e cards de status. Datasets são carregados uma única vez por modalidade e bases indisponíveis não interrompem a página. A verificação individual por ID (**"🔍 Verificar novamente"**) foi mantida em "Ações por jogo".
+- **Histórico / verificação em lote**: resumo ampliado em duas linhas — **Já sorteados | Nunca sorteados | Sorteados com mais de 11 dezenas | Com erro** e **quantos jogos** com ≥1 acerto em **15 / 14 / 13 / 12 / 11 dezenas** (a linha 2 não soma volumes entre jogos). Cada card exibe, em linhas separadas, o volume **por jogo** de sorteios com exatamente N dezenas em comum (11–15). Nova API de domínio: `count_hit_tiers` / `analyze_game` em `loterias_core/validator.py`.
 
 ### Changed
 

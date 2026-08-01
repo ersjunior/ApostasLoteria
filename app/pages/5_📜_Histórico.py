@@ -16,9 +16,12 @@ from app.services.user_history import (
     export_history_csv,
     list_user_games,
 )
-from app.services.validator import check_game
+from app.services.validator import HIT_TIERS, analyze_game, check_game
 from app.ui.shell import render_app_chrome
-from app.ui.theme import page_title, responsible_gaming_footer, section
+from app.ui.theme import metric_card, page_title, responsible_gaming_footer, section
+
+# Faixas exibidas do maior para o menor (15 → 11).
+_TIER_DISPLAY = tuple(sorted(HIT_TIERS, reverse=True))
 
 st.set_page_config(page_title="Histórico de Jogos", layout="wide")
 
@@ -136,8 +139,9 @@ if st.button(
     key="history_bulk_verify_btn",
 ):
     ordenados = sorted(rows, key=lambda r: r["id"])[:qtd_verificar]
-    resultados: list[tuple[str, str, str, str]] = []
+    resultados: list[dict] = []
     datasets: dict[str, object] = {}
+    empty_tiers = {tier: 0 for tier in HIT_TIERS}
 
     for row in ordenados:
         lk = row["lottery_key"]
@@ -159,51 +163,125 @@ if st.button(
 
         base = datasets[lk]
         if isinstance(base, Exception):
-            resultados.append(("error", titulo, dezenas_txt, "Base indisponível"))
+            resultados.append(
+                {
+                    "status": "error",
+                    "titulo": titulo,
+                    "dezenas_txt": dezenas_txt,
+                    "msg": "Base indisponível",
+                    "tier_counts": dict(empty_tiers),
+                    "hits_above_11": False,
+                }
+            )
             continue
 
         try:
             extras = row.get("extras") or None
-            found = check_game(row["dezenas"], base, extra_values=extras or None)
-            if found:
-                resultados.append(("success", titulo, dezenas_txt, "Já sorteado 🎉"))
+            analysis = analyze_game(
+                row["dezenas"],
+                base,
+                extra_values=extras or None,
+            )
+            if analysis["exact_match"]:
+                status, msg = "success", "Já sorteado 🎉"
             else:
-                resultados.append(("warning", titulo, dezenas_txt, "Nunca sorteado 🔍"))
-        except (ValueError, KeyError):
-            resultados.append(("error", titulo, dezenas_txt, "Erro na verificação"))
+                status, msg = "warning", "Nunca sorteado 🔍"
+            resultados.append(
+                {
+                    "status": status,
+                    "titulo": titulo,
+                    "dezenas_txt": dezenas_txt,
+                    "msg": msg,
+                    "tier_counts": analysis["tier_counts"],
+                    "hits_above_11": analysis["hits_above_11"],
+                }
+            )
+        except (ValueError, KeyError, TypeError):
+            resultados.append(
+                {
+                    "status": "error",
+                    "titulo": titulo,
+                    "dezenas_txt": dezenas_txt,
+                    "msg": "Erro na verificação",
+                    "tier_counts": dict(empty_tiers),
+                    "hits_above_11": False,
+                }
+            )
 
     st.session_state["history_bulk_results"] = resultados
 
 _bulk_results = st.session_state.get("history_bulk_results")
 if _bulk_results:
-    n_sorteados = sum(1 for r in _bulk_results if r[0] == "success")
-    n_ineditos = sum(1 for r in _bulk_results if r[0] == "warning")
-    n_erros = sum(1 for r in _bulk_results if r[0] == "error")
+    # Compatibilidade com resultados antigos (tuplas) — força reexecução.
+    if _bulk_results and not isinstance(_bulk_results[0], dict):
+        st.session_state.pop("history_bulk_results", None)
+        st.info("Clique novamente em **Verificar** para atualizar o resumo com as novas métricas.")
+    else:
+        n_sorteados = sum(1 for r in _bulk_results if r["status"] == "success")
+        n_ineditos = sum(1 for r in _bulk_results if r["status"] == "warning")
+        n_acima_11 = sum(1 for r in _bulk_results if r.get("hits_above_11"))
+        n_erros = sum(1 for r in _bulk_results if r["status"] == "error")
+        # Linha 2: quantos jogos do lote tiveram ≥1 acerto na faixa —
+        # NÃO soma volumes entre jogos (isso inflava além do nº de sorteios da base).
+        jogos_por_faixa = {
+            tier: sum(
+                1 for r in _bulk_results if (r.get("tier_counts") or {}).get(tier, 0) > 0
+            )
+            for tier in HIT_TIERS
+        }
 
-    resumo = st.columns(3)
-    with resumo[0]:
-        st.metric("✅ Já sorteados", n_sorteados)
-    with resumo[1]:
-        st.metric("🔍 Nunca sorteados", n_ineditos)
-    with resumo[2]:
-        st.metric("⚠️ Com erro", n_erros)
+        linha1 = st.columns(4)
+        with linha1[0]:
+            metric_card("Já sorteados", str(n_sorteados), "✅")
+        with linha1[1]:
+            metric_card("Nunca sorteados", str(n_ineditos), "🔍")
+        with linha1[2]:
+            metric_card("Sorteados com mais de 11 dezenas", str(n_acima_11), "🎯")
+        with linha1[3]:
+            metric_card("Com erro", str(n_erros), "⚠️")
 
-    st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
 
-    results_per_row = 5
-    for i in range(0, len(_bulk_results), results_per_row):
-        cols = st.columns(results_per_row)
-        for col, (status, titulo, dezenas_txt, msg) in zip(
-            cols, _bulk_results[i : i + results_per_row], strict=False
-        ):
+        linha2 = st.columns(5)
+        for col, tier in zip(linha2, _TIER_DISPLAY, strict=True):
             with col:
-                corpo = f"**{titulo}**\n\n{dezenas_txt}\n\n{msg}"
-                if status == "success":
-                    st.success(corpo)
-                elif status == "warning":
-                    st.warning(corpo)
-                else:
-                    st.error(corpo)
+                metric_card(f"{tier} dezenas", str(jogos_por_faixa[tier]), "🎱")
+
+        st.caption(
+            "Linha 2 = **quantos jogos** do lote tiveram ao menos um sorteio com "
+            "exatamente N dezenas em comum. "
+            "Em cada card, o volume é **por jogo** (quantos sorteios da base bateram "
+            "11, 12, 13, 14 ou 15 dezenas com aquela aposta) — nunca soma entre jogos. "
+            "**Sorteados com mais de 11** = jogos com ao menos um acerto em 12–15."
+        )
+
+        st.markdown("<div style='margin-top:16px'></div>", unsafe_allow_html=True)
+
+        results_per_row = 5
+        for i in range(0, len(_bulk_results), results_per_row):
+            cols = st.columns(results_per_row)
+            for col, item in zip(
+                cols, _bulk_results[i : i + results_per_row], strict=False
+            ):
+                with col:
+                    tiers = item.get("tier_counts") or {}
+                    # Duas quebras forçam parágrafo no Markdown do Streamlit
+                    # (um único \n colapsa e as faixas ficavam lado a lado).
+                    tiers_txt = "\n\n".join(
+                        f"{tier} dezenas: {tiers.get(tier, 0)}" for tier in _TIER_DISPLAY
+                    )
+                    corpo = (
+                        f"**{item['titulo']}**\n\n"
+                        f"{item['dezenas_txt']}\n\n"
+                        f"{item['msg']}\n\n"
+                        f"{tiers_txt}"
+                    )
+                    if item["status"] == "success":
+                        st.success(corpo)
+                    elif item["status"] == "warning":
+                        st.warning(corpo)
+                    else:
+                        st.error(corpo)
 
 section("⚙️ Ações por jogo")
 

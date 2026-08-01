@@ -1,5 +1,5 @@
 """Reexporta validação de jogos do core de domínio."""
 
-from loterias_core.validator import check_game
+from loterias_core.validator import HIT_TIERS, analyze_game, check_game, count_hit_tiers
 
-__all__ = ["check_game"]
+__all__ = ["HIT_TIERS", "analyze_game", "check_game", "count_hit_tiers"]
